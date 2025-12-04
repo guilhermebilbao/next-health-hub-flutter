@@ -1,10 +1,11 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../models/patient_model.dart';
 
 class AuthService {
   final SupabaseClient _supabase = Supabase.instance.client;
 
-  Future<void> loginPatient(String cpf) async {
+  Future<Patient> loginPatient(String cpf) async {
     try {
       // Limpeza do CPF
       final cleanCPF = cpf.replaceAll(RegExp(r'\D'), '');
@@ -22,17 +23,27 @@ class AuthService {
       if (data != null && data['statusCode'] == 200) {
         final patientData = data['data'];
 
+        // Criação do objeto Patient usando o Model
+        final patient = Patient(
+          patientId: patientData['patientId'].toString(),
+          patientName: patientData['patientName'],
+          patientToken: patientData['token'],
+          patientCpf: cleanCPF,
+        );
+
         // Persistência local
         final prefs = await SharedPreferences.getInstance();
 
         // Salvando os campos
-        await prefs.setString('patientId', patientData['patientId'].toString());
-        if (patientData['patientName'] != null) {
-          await prefs.setString('patientName', patientData['patientName']);
+        await prefs.setString('patientId', patient.patientId);
+        if (patient.patientName != null) {
+          await prefs.setString('patientName', patient.patientName!);
         }
-        await prefs.setString('patientToken', patientData['token']);
-        await prefs.setString('patientCpf', cleanCPF);
+        await prefs.setString('patientToken', patient.patientToken);
+        await prefs.setString('patientCpf', patient.patientCpf);
         await prefs.setString('userType', 'patient');
+
+        return patient;
       } else {
         // Tratamento de erro vindo da API (ex: CPF não encontrado)
         throw Exception(data['message'] ?? 'Erro desconhecido ao autenticar.');
