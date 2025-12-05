@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
+import '../../shared/app_formatters.dart';
 import '../data/auth_service.dart';
 import 'viewmodel/login_bloc.dart';
 import '../../components/app_button.dart';
+import 'widgets/two_factor_auth_dialog.dart';
 
 class LoginPatientScreen extends StatelessWidget {
   const LoginPatientScreen({super.key});
@@ -27,11 +28,7 @@ class LoginPatientView extends StatefulWidget {
 class _LoginPatientViewState extends State<LoginPatientView> {
   final _formKey = GlobalKey<FormState>();
 
-  final _cpfFormatter = MaskTextInputFormatter(
-    mask: '###.###.###-##',
-    filter: {"#": RegExp(r'[0-9]')},
-    type: MaskAutoCompletionType.lazy,
-  );
+  final _cpfFormatter = AppFormatters.cpf;
 
   final TextEditingController _cpfController = TextEditingController();
 
@@ -47,22 +44,40 @@ class _LoginPatientViewState extends State<LoginPatientView> {
     }
   }
 
+  void _showTwoFactorDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => TwoFactorAuthDialog(
+        onVerified: (code) {
+          Navigator.of(dialogContext).pop();
+          context.read<LoginBloc>().add(LoginCodeSubmitted(code));
+        },
+        onCancel: () {
+           Navigator.of(dialogContext).pop();
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     const logoImage = 'assets/images/next_healt_logo.png';
 
     return Scaffold(
+      backgroundColor: Colors.white,
       body: BlocListener<LoginBloc, LoginState>(
         listener: (context, state) {
           if (state is LoginSuccess) {
+            _showTwoFactorDialog();
+          } else if (state is LoginVerified) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('Login realizado com sucesso!'),
-                backgroundColor: Colors.green,
+                content: Text('Código validado com sucesso! Redirecionando...'),
+                backgroundColor: Color.fromRGBO(27, 106, 123, 1),
               ),
             );
-            // TODO: Navegar para o Dashboard
-            // Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => DashboardScreen()));
+            Navigator.of(context).pushReplacementNamed('/home');
           } else if (state is LoginFailure) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -70,6 +85,9 @@ class _LoginPatientViewState extends State<LoginPatientView> {
                 backgroundColor: Colors.red,
               ),
             );
+            if (state.message == 'Código incorreto. Tente novamente.') {
+              _showTwoFactorDialog();
+            }
           }
         },
         child: Center(

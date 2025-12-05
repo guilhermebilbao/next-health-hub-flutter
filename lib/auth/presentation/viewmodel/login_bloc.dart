@@ -12,6 +12,7 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
       : _authService = authService,
         super(LoginInitial()) {
     on<LoginSubmitted>(_onLoginSubmitted);
+    on<LoginCodeSubmitted>(_onLoginCodeSubmitted);
   }
 
   Future<void> _onLoginSubmitted(
@@ -23,7 +24,24 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
       await _authService.loginPatient(event.cpf);
       emit(LoginSuccess());
     } catch (e) {
-      // Remove "Exception: " prefix if present for cleaner UI
+      final message = e.toString().replaceAll('Exception: ', '');
+      emit(LoginFailure(message));
+    }
+  }
+
+  Future<void> _onLoginCodeSubmitted(
+    LoginCodeSubmitted event,
+    Emitter<LoginState> emit,
+  ) async {
+    emit(LoginLoading());
+    try {
+      final isValid = await _authService.verifyCode(event.code);
+      if (isValid) {
+        emit(LoginVerified());
+      } else {
+        emit(LoginFailure('Código incorreto. Tente novamente.'));
+      }
+    } catch (e) {
       final message = e.toString().replaceAll('Exception: ', '');
       emit(LoginFailure(message));
     }

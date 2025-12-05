@@ -7,10 +7,7 @@ class AuthService {
 
   Future<Patient> loginPatient(String cpf) async {
     try {
-      // Limpeza do CPF
       final cleanCPF = cpf.replaceAll(RegExp(r'\D'), '');
-
-      // Chamada da Edge Function
 
       final response = await _supabase.functions.invoke(
         'auth-patient',
@@ -19,11 +16,9 @@ class AuthService {
 
       final data = response.data;
 
-      // Validação da resposta
       if (data != null && data['statusCode'] == 200) {
         final patientData = data['data'];
 
-        // Criação do objeto Patient usando o Model
         final patient = Patient(
           patientId: patientData['patientId'].toString(),
           patientName: patientData['patientName'],
@@ -31,10 +26,8 @@ class AuthService {
           patientCpf: cleanCPF,
         );
 
-        // Persistência local
         final prefs = await SharedPreferences.getInstance();
 
-        // Salvando os campos
         await prefs.setString('patientId', patient.patientId);
         if (patient.patientName != null) {
           await prefs.setString('patientName', patient.patientName!);
@@ -45,19 +38,27 @@ class AuthService {
 
         return patient;
       } else {
-        // Tratamento de erro vindo da API (ex: CPF não encontrado)
         throw Exception(data['message'] ?? 'Erro desconhecido ao autenticar.');
       }
     } catch (e) {
-      // Erros de rede ou exceções lançadas acima
       throw Exception('Falha na autenticação: $e');
+    }
+  }
+
+  Future<bool> verifyCode(String code) async {
+    // TODO: Implementar chamada real ao API Gateway
+    await Future.delayed(const Duration(seconds: 2));
+    
+    if (code == '1234') {
+      return true;
+    } else {
+      print('false');
+      return false;
     }
   }
 
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
-    // Se estiver usando Auth do Supabase também
-    // await _supabase.auth.signOut();
   }
 }
