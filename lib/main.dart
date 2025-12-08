@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'dart:async';
-import 'auth/presentation/onboarding_screen.dart';
-import 'dashboard/presentation/dashboard_screen.dart';
+import 'app_routes.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,13 +25,10 @@ class MyApp extends StatelessWidget {
       title: 'Health Hub',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(primarySwatch: Colors.blue, useMaterial3: true),
-      // Define as rotas nomeadas
-      routes: {
-        '/': (context) => const OnboardingScreen(),
-        '/home': (context) => const DashboardScreen(),
-      },
+      // Define as rotas centralizadas
+      routes: AppRoutes.routes,
       // Define a rota inicial
-      initialRoute: '/',
+      initialRoute: AppRoutes.onboarding,
     );
   }
 }

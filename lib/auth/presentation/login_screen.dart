@@ -5,6 +5,7 @@ import '../data/auth_service.dart';
 import 'viewmodel/login_bloc.dart';
 import '../../components/app_button.dart';
 import 'widgets/two_factor_auth_dialog.dart';
+import '../../app_routes.dart';
 
 class LoginPatientScreen extends StatelessWidget {
   const LoginPatientScreen({super.key});
@@ -77,7 +78,7 @@ class _LoginPatientViewState extends State<LoginPatientView> {
                 backgroundColor: Color.fromRGBO(27, 106, 123, 1),
               ),
             );
-            Navigator.of(context).pushReplacementNamed('/home');
+            Navigator.of(context).pushReplacementNamed(AppRoutes.home);
           } else if (state is LoginFailure) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(

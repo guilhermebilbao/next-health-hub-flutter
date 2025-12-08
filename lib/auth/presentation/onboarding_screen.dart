@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../components/app_button.dart';
-import 'login_screen.dart';
+import '../../app_routes.dart';
 
 class OnboardingScreen extends StatelessWidget {
   const OnboardingScreen({super.key});
@@ -49,12 +49,7 @@ class OnboardingScreen extends StatelessWidget {
                 ),
                 child: InkWell(
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const LoginPatientScreen(),
-                      ),
-                    );
+                    Navigator.pushNamed(context, AppRoutes.login);
                   },
                   borderRadius: BorderRadius.circular(16),
                   child: Padding(
@@ -93,13 +88,7 @@ class OnboardingScreen extends StatelessWidget {
                         AppButton(
                           text: 'Acessar como Paciente',
                           onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    const LoginPatientScreen(),
-                              ),
-                            );
+                            Navigator.pushNamed(context, AppRoutes.login);
                           },
                           backgroundColor: Colors.blue,
                         ),
