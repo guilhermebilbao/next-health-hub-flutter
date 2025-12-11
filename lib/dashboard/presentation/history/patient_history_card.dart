@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../models/patient_history_models.dart';
-import 'patient_history_screen.dart';
+import '../../models/patient_history_models.dart';
+import 'patient_history_list_screen.dart';
 
 class PatientHistoryCard extends StatelessWidget {
   final Future<PatientHistoryResponse> historyFuture;
@@ -58,7 +58,7 @@ class PatientHistoryCard extends StatelessWidget {
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
                               color: Colors.blue.withOpacity(0.1),
-                              shape: BoxShape.rectangle,
+                              borderRadius: BorderRadius.circular(12),
                             ),
                             child: const Icon(Icons.history_edu, size: 32, color: Colors.blue),
                           ),

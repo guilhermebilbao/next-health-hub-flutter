@@ -1,3 +1,5 @@
+//Modelo macro da resposta da estrutura json getpatientrecordhistory
+
 import 'patient_record.dart';
 
 class PatientHistoryResponse {

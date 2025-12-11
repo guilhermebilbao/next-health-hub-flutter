@@ -1,6 +1,8 @@
-import 'procedimento.dart';
-import 'medicamento.dart';
-import 'solicitacao_exame.dart';
+//Modelo do data da resposta da estrutura json getpatientrecordhistory
+
+import 'procedure.dart';
+import 'medicine.dart';
+import 'exam.dart';
 
 class PatientRecord {
   final String medicalRecordNumber;
@@ -11,7 +13,7 @@ class PatientRecord {
   final String? conduta;
   final List<Procedimento> procedimentos;
   final List<Medicamento> medicamentos;
-  final List<SolicitacaoExame> solicitacoesExames;
+  final List<Exam> solicitacoesExames;
 
   PatientRecord({
     required this.medicalRecordNumber,
@@ -42,7 +44,7 @@ class PatientRecord {
               .toList() ??
           [],
       solicitacoesExames: (json['solicitacoesExames'] as List?)
-              ?.map((i) => SolicitacaoExame.fromJson(i))
+              ?.map((i) => Exam.fromJson(i))
               .toList() ??
           [],
     );

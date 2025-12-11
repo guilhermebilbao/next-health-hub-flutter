@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import '../../components/app_bar.dart';
-import '../../components/app_drawer.dart';
-import '../../auth/data/auth_service.dart';
-import '../../app_routes.dart';
-import '../data/dashboard_repository.dart';
-import '../models/patient_history_models.dart';
+import '../../../components/app_bar.dart';
+import '../../../components/app_drawer.dart';
+import '../../../auth/data/auth_service.dart';
+import '../../../app_routes.dart';
+import '../../data/dashboard_repository.dart';
+import '../../models/patient_history_models.dart';
+import '../../../shared/app_utils.dart';
 
 class PatientRecordDetailScreen extends StatefulWidget {
   final PatientRecord record;
@@ -43,6 +44,18 @@ class _PatientRecordDetailScreenState extends State<PatientRecordDetailScreen> {
       final date = DateTime.parse(widget.record.dataAtendimento);
       dateDisplay = "${date.day}/${date.month}/${date.year}, ${date.hour}:${date.minute}";
     } catch (_) {}
+
+    final filteredProcedures = widget.record.procedimentos
+        .where((p) => AppUtils.areCodesEqual(p.codigoAtendimento, widget.record.codigoAtendimento))
+        .toList();
+        
+    final filteredExams = widget.record.solicitacoesExames
+        .where((e) => AppUtils.areCodesEqual(e.codigoAtendimento, widget.record.codigoAtendimento))
+        .toList();
+
+    final filteredMedicine = widget.record.medicamentos
+        .where((m) => AppUtils.areCodesEqual(m.codigoAtendimento, widget.record.codigoAtendimento))
+        .toList();
 
     return Scaffold(
       key: _scaffoldKey,
@@ -88,7 +101,7 @@ class _PatientRecordDetailScreenState extends State<PatientRecordDetailScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'Detalhes do Atendimento ',
+                    'Detalhes do Atendimento',
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -147,45 +160,100 @@ class _PatientRecordDetailScreenState extends State<PatientRecordDetailScreen> {
                         Text(widget.record.exameFisico, style: const TextStyle(fontSize: 15, height: 1.4)),
                         const Divider(height: 32),
                       ],
-                      if (widget.record.medicamentos.isNotEmpty) ...[
-                        _buildSectionTitle('Medicamentos'),
-                        ...widget.record.medicamentos.map((m) => Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('• ', style: TextStyle(fontWeight: FontWeight.bold)),
-                              Expanded(
-                                child: Text.rich(
-                                  TextSpan(
-                                    text: m.medicamento,
+                      if (widget.record.conduta != null && widget.record.conduta!.trim().isNotEmpty) ...[
+                        _buildSectionTitle('Conduta'),
+                        Text(widget.record.conduta!, style: const TextStyle(fontSize: 15, height: 1.4)),
+                        const Divider(height: 32),
+                      ],
+                      if (widget.record.procedimentos.isNotEmpty) ...[
+                        _buildSectionTitle('Procedimentos'),
+                        if (filteredProcedures.isEmpty)
+                          const Padding(
+                            padding: EdgeInsets.only(bottom: 8.0),
+                            child: Text(
+                              'Sem procedimentos',
+                              style: TextStyle(fontStyle: FontStyle.italic, color: Colors.black54),
+                            ),
+                          )
+                        else
+                          ...filteredProcedures.map((p) => Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text('• ', style: TextStyle(fontWeight: FontWeight.bold)),
+                                Expanded(
+                                  child: Text(
+                                    p.procedimento,
                                     style: const TextStyle(fontWeight: FontWeight.w600),
-                                    children: [
-                                      TextSpan(
-                                        text: ' (${m.posologia})',
-                                        style: const TextStyle(fontWeight: FontWeight.normal),
-                                      ),
-                                    ],
                                   ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        )),
+                              ],
+                            ),
+                          )),
+                        const Divider(height: 32),
+                      ],
+                      if (widget.record.medicamentos.isNotEmpty) ...[
+                        _buildSectionTitle('Medicamentos Prescritos'),
+                        if (filteredMedicine.isEmpty)
+                          const Padding(
+                            padding: EdgeInsets.only(bottom: 8.0),
+                            child: Text(
+                              'Não foram prescritos medicamentos.',
+                              style: TextStyle(fontStyle: FontStyle.italic, color: Colors.black54),
+                            ),
+                          )
+                        else
+                          ...filteredMedicine.map((m) => Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text('• ', style: TextStyle(fontWeight: FontWeight.bold)),
+                                Expanded(
+                                  child: Text.rich(
+                                    TextSpan(
+                                      text: m.medicamento,
+                                      style: const TextStyle(fontWeight: FontWeight.w600),
+                                      children: [
+                                        TextSpan(
+                                          text: ' (Qtd: ${m.quantidade})',
+                                          style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),
+                                        ),
+                                        TextSpan(
+                                          text: ' - ${m.posologia}',
+                                          style: const TextStyle(fontWeight: FontWeight.normal),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )),
                         const Divider(height: 32),
                       ],
                       if (widget.record.solicitacoesExames.isNotEmpty) ...[
-                        _buildSectionTitle('Exames Solicitados'),
-                        ...widget.record.solicitacoesExames.map((e) => Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('• ', style: TextStyle(fontWeight: FontWeight.bold)),
-                              Expanded(child: Text(e.exame)),
-                            ],
-                          ),
-                        )),
+                        _buildSectionTitle('Solicitações de Exames'),
+                        if (filteredExams.isEmpty)
+                          const Padding(
+                            padding: EdgeInsets.only(bottom: 8.0),
+                            child: Text(
+                              'Não foram solicitados exames.',
+                              style: TextStyle(fontStyle: FontStyle.italic, color: Colors.black54),
+                            ),
+                          )
+                        else
+                          ...filteredExams.map((e) => Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text('• ', style: TextStyle(fontWeight: FontWeight.bold)),
+                                Expanded(child: Text(e.exame)),
+                              ],
+                            ),
+                          )),
                       ],
                     ],
                   ),

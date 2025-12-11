@@ -8,7 +8,7 @@ import '../data/dashboard_repository.dart';
 import '../data/patient_history_service.dart';
 import '../models/patient_history_models.dart';
 import 'patient_info_card.dart';
-import 'patient_history_card.dart';
+import 'history/patient_history_card.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
