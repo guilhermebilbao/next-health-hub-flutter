@@ -5,6 +5,10 @@ import '../../components/app_drawer.dart';
 import '../../auth/data/auth_service.dart';
 import '../../app_routes.dart';
 import '../data/dashboard_repository.dart';
+import '../data/patient_history_service.dart';
+import '../models/patient_history_models.dart';
+import 'patient_info_card.dart';
+import 'patient_history_card.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -18,14 +22,24 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
   int _selectedIndex = 0;
   Timer? _timer;
   late Future<String> _patientNameFuture;
+  late Future<PatientHistoryResponse> _historyFuture;
   late AnimationController _pulseController;
+  late PatientHistoryService _patientHistoryService;
+  String _patienteId = '';
 
   @override
   void initState() {
     super.initState();
+    _patientHistoryService = PatientHistoryService();
     // Carrega o nome apenas uma vez
     _patientNameFuture = DashboardRepository().getPatientName();
     
+    // CACHE DO FUTURE: Encadeia a busca do ID com a busca do histórico.
+    _historyFuture = DashboardRepository().getPatientId().then((id) {
+      _patienteId = id;
+      return _patientHistoryService.getPatientRecordHistory(id);
+    });
+
     // Controlador da animação de pulso
     _pulseController = AnimationController(
       vsync: this,
@@ -89,146 +103,61 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
                   child: Center(child: CircularProgressIndicator()),
                 );
               }
-              return Card(
-                margin: const EdgeInsets.all(16),
-                elevation: 4,
-                color: const Color.fromRGBO(27, 106, 123, 1),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Column(
-                        children: [
-                          Container(
-                            width: 48,
-                            height: 48,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Icon(
-                              Icons.calendar_today,
-                              size: 30,
-                              color: Colors.white,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                FadeTransition(
-                                  opacity: _pulseController,
-                                  child: Container(
-                                    width: 8,
-                                    height: 8,
-                                    decoration: const BoxDecoration(
-                                      color: Colors.white,
-                                      shape: BoxShape.circle,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  repository.getFormattedTime(),
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Text(
-                                  '${repository.getGreeting()}, ',
-                                  style: const TextStyle(
-                                      fontSize: 18, color: Colors.white,
-                                    fontWeight: FontWeight.bold,),
-                                ),
-                                Text(
-                                  '${(snapshot.data?.isNotEmpty == true) ?
-                                  snapshot.data!.split(' ').first : 'Usuário'}!',
-                                  style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              repository.getFormattedDate(),
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Colors.white70,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              return PatientInfoCard(
+                pulseController: _pulseController,
+                repository: repository,
+                patientName: snapshot.data,
               );
             },
           ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Column(
-              children: [
-                Center(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'Bem-vindo ao ',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+          Expanded(
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  children: [
+                    Center(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Bem-vindo ao ',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            'NEXT - Saúde One',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: const Color.fromRGBO(27, 106, 123, 1),
+                            ),
+                          )
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(
+                        left: 24.0,
+                        right: 24.0,
+                      ),
+                      child: Center(
+                        child: Text(
+                          'Acesse seus exames e histórico médico de forma rápida e segura',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 14, color: Colors.black54),
                         ),
                       ),
-                      Text(
-                        'NEXT - Saúde One',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: const Color.fromRGBO(27, 106, 123, 1),
-                        ),
-                      )
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(
-                    left: 24.0,
-                    right: 24.0,
-                  ),
-                  child: Center(
-                    child: Text(
-                      'Acesse seus exames e histórico médico de forma rápida e segura',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 14, color: Colors.black54),
                     ),
-                  ),
+                    const SizedBox(height: 16),
+                    
+                    // Widget separado para exibir o card de histórico
+                    PatientHistoryCard(historyFuture: _historyFuture),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ],
