@@ -4,7 +4,7 @@ import '../../../components/app_drawer.dart';
 import '../../../auth/data/auth_service.dart';
 import '../../../app_routes.dart';
 import '../../data/dashboard_repository.dart';
-import '../../models/patient_history_models.dart';
+import '../../models/history/patient_history_models.dart';
 import 'patient_history_detail_screen.dart';
 
 class PatientHistoryScreen extends StatefulWidget {

@@ -1,13 +1,13 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../../shared/api_client.dart';
-import '../models/history/patient_history_models.dart';
+import '../models/exam/patient_exam_response.dart';
 
-class PatientHistoryService {
+class PatientExamService {
   final ApiClient _apiClient;
 
-  PatientHistoryService({ApiClient? apiClient}) : _apiClient = apiClient ?? ApiClient();
+  PatientExamService({ApiClient? apiClient}) : _apiClient = apiClient ?? ApiClient();
 
-  Future<PatientHistoryResponse> getPatientRecordHistory(String patientId) async {
+  Future<PatientExamResponse> getPatientExams(String patientId) async {
     final username = dotenv.env['USERNAME_API'];
     final password = dotenv.env['PASSWORD_API'];
     final codeproject = dotenv.env['CODEPROJETC_API'];
@@ -20,10 +20,10 @@ class PatientHistoryService {
     };
 
     try {
-      final response = await _apiClient.post("getpatientrecordhistory", requestBody);
-      return PatientHistoryResponse.fromJson(response);
+      final response = await _apiClient.post("getreportsbypatientid", requestBody);
+      return PatientExamResponse.fromJson(response);
     } catch (e) {
-      throw Exception('Failed to fetch patient history: $e');
+      throw Exception('Failed to fetch patient exams: $e');
     }
   }
 }

@@ -16,23 +16,17 @@ class NextAppBar extends StatelessWidget implements PreferredSizeWidget {
       automaticallyImplyLeading: automaticallyImplyLeading,
       title: Row(
         children: [
-          Image.asset(
-            'assets/images/next_healt_logo.png',
-            height: 20,
-          ),
+          Image.asset('assets/images/next_healt_logo.png', height: 20),
           const SizedBox(width: 10),
           const Text(
             'NEXT – Saúde One',
-            style: TextStyle(fontSize: 16),
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
         ],
       ),
       actions: [
         IconButton(
-          icon: const Icon(
-            Icons.menu,
-            size: 20,
-          ),
+          icon: const Icon(Icons.menu, size: 20),
           onPressed: onMenuPressed,
         ),
       ],
