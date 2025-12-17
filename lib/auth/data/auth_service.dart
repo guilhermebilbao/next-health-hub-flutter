@@ -1,44 +1,84 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/patient_model.dart';
 
 class AuthService {
-  final SupabaseClient _supabase = Supabase.instance.client;
-
   Future<Patient> loginPatient(String cpf) async {
     try {
       final cleanCPF = cpf.replaceAll(RegExp(r'\D'), '');
 
-      final response = await _supabase.functions.invoke(
-        'auth-patient',
-        body: {'cpf': cleanCPF},
+      final String apiUrl = dotenv.env['API_BASE_URL'] ?? '';
+      final String codeProject = dotenv.env['CODEPROJETC_API'] ?? '';
+      final String username = dotenv.env['USERNAME_API'] ?? '';
+      final String password = dotenv.env['PASSWORD_API'] ?? '';
+
+      if (apiUrl.isEmpty) {
+        throw Exception('API_BASE_URL não configurada no arquivo .env');
+      }
+
+      final url = Uri.parse(apiUrl);
+
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          "partner": "app",
+          "service": "authpatient",
+          "request": {
+            "cpf": cleanCPF,
+            "username": username,
+            "password": password,
+            "codeproject": codeProject,
+          },
+        }),
       );
 
-      final data = response.data;
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseBody = jsonDecode(response.body);
 
-      if (data != null && data['statusCode'] == 200) {
-        final patientData = data['data'];
+        // Verifica statusCode interno da resposta da API
+        if (responseBody['statusCode'] == 200) {
+          final patientData = responseBody['data'];
 
-        final patient = Patient(
-          patientId: patientData['patientId'].toString(),
-          patientName: patientData['patientName'],
-          patientToken: patientData['token'],
-          patientCpf: cleanCPF,
-        );
+          if (patientData == null) {
+            throw Exception("Dados de paciente não encontrados na resposta.");
+          }
 
-        final prefs = await SharedPreferences.getInstance();
+          final patient = Patient.fromJson(patientData, cleanCPF);
 
-        await prefs.setString('patientId', patient.patientId);
-        if (patient.patientName != null) {
-          await prefs.setString('patientName', patient.patientName!);
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('patientId', patient.patientId);
+          if (patient.patientName != null) {
+            await prefs.setString('patientName', patient.patientName!);
+          }
+          await prefs.setString('patientToken', patient.patientToken);
+          await prefs.setString('patientCpf', patient.patientCpf);
+
+          if (patient.birthDate != null)
+            await prefs.setString('birthDate', patient.birthDate!);
+          if (patient.socialName != null)
+            await prefs.setString('socialName', patient.socialName!);
+          if (patient.cns != null) await prefs.setString('cns', patient.cns!);
+          if (patient.habilitarHistoricoApp != null)
+            await prefs.setBool(
+              'habilitarHistoricoApp',
+              patient.habilitarHistoricoApp!,
+            );
+          if (patient.email != null)
+            await prefs.setString('email', patient.email!);
+
+          await prefs.setString('userType', 'patient');
+
+          return patient;
+        } else {
+          throw Exception(
+            responseBody['message'] ?? 'Erro na resposta da API.',
+          );
         }
-        await prefs.setString('patientToken', patient.patientToken);
-        await prefs.setString('patientCpf', patient.patientCpf);
-        await prefs.setString('userType', 'patient');
-
-        return patient;
       } else {
-        throw Exception(data['message'] ?? 'Erro desconhecido ao autenticar.');
+        throw Exception('Erro na requisição: ${response.statusCode}');
       }
     } catch (e) {
       throw Exception('Falha na autenticação: $e');
@@ -48,7 +88,7 @@ class AuthService {
   Future<bool> verifyCode(String code) async {
     // TODO: Implementar chamada real ao API Gateway
     await Future.delayed(const Duration(seconds: 2));
-    
+
     if (code == '1234') {
       return true;
     } else {
