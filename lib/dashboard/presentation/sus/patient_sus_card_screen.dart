@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:next_healt_hub/dashboard/presentation/sus/patient_sus_card.dart';
 import 'package:provider/provider.dart';
 
 import '../../../components/app_bar.dart';
@@ -104,10 +105,10 @@ class _PatientSusCardScreenState extends State<PatientSusCardScreen> {
           ),
           Expanded(
             child: Center(
-              child: Image.asset(
-                'assets/images/next_healt_logo.png',
-                fit: BoxFit.contain,
-              ),
+              child: PatientSusCard(
+                nomeCompleto: "JOÃO DA SILVA",
+                numeroCartao: "898.000.123.456-78",
+              )
             ),
           ),
         ],
