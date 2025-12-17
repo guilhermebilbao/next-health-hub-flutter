@@ -1,3 +1,5 @@
+import 'package:shared_preferences/shared_preferences.dart';
+
 class Patient {
   final String patientId;
   final String? patientName;
@@ -47,5 +49,30 @@ class Patient {
       habilitarHistoricoApp: json['habilitarHistoricoApp'],
       email: json['email'],
     );
+  }
+
+  Future<void> saveToPreferences(SharedPreferences prefs) async {
+
+    await prefs.setString('patientId', patientId);
+    await prefs.setString('patientToken', patientToken);
+    await prefs.setString('patientCpf', patientCpf);
+
+    final Map<String, String?> optionalStringFields = {
+      'patientName': patientName,
+      'birthDate': birthDate,
+      'socialName': socialName,
+      'cns': cns,
+      'email': email,
+    };
+
+    for (var entry in optionalStringFields.entries) {
+      if (entry.value != null) {
+        await prefs.setString(entry.key, entry.value!);
+      }
+    }
+
+    if (habilitarHistoricoApp != null) {
+      await prefs.setBool('habilitarHistoricoApp', habilitarHistoricoApp!);
+    }
   }
 }

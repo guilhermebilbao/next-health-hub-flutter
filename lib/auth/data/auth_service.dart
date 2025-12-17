@@ -49,26 +49,7 @@ class AuthService {
           final patient = Patient.fromJson(patientData, cleanCPF);
 
           final prefs = await SharedPreferences.getInstance();
-          await prefs.setString('patientId', patient.patientId);
-          if (patient.patientName != null) {
-            await prefs.setString('patientName', patient.patientName!);
-          }
-          await prefs.setString('patientToken', patient.patientToken);
-          await prefs.setString('patientCpf', patient.patientCpf);
-
-          if (patient.birthDate != null)
-            await prefs.setString('birthDate', patient.birthDate!);
-          if (patient.socialName != null)
-            await prefs.setString('socialName', patient.socialName!);
-          if (patient.cns != null) await prefs.setString('cns', patient.cns!);
-          if (patient.habilitarHistoricoApp != null)
-            await prefs.setBool(
-              'habilitarHistoricoApp',
-              patient.habilitarHistoricoApp!,
-            );
-          if (patient.email != null)
-            await prefs.setString('email', patient.email!);
-
+          await patient.saveToPreferences(prefs);
           await prefs.setString('userType', 'patient');
 
           return patient;
