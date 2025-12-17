@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../components/app_bar.dart';
 import '../../../components/app_drawer.dart';
 import '../../../auth/data/auth_service.dart';
 import '../../../app_routes.dart';
-import '../../data/dashboard_repository.dart';
 import '../../models/history/patient_history_models.dart';
 import 'patient_history_detail_screen.dart';
-import '../../data/patient_exam_service.dart';
 import '../exam/patient_exam_list_screen.dart';
 import '../sus/patient_sus_card_screen.dart';
+import '../viewmodel/dashboard_viewmodel.dart';
 
 class PatientHistoryScreen extends StatefulWidget {
   final PatientHistoryResponse historyResponse;
@@ -21,13 +21,6 @@ class PatientHistoryScreen extends StatefulWidget {
 
 class _PatientHistoryScreenState extends State<PatientHistoryScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  late Future<String> _patientNameFuture;
-
-  @override
-  void initState() {
-    super.initState();
-    _patientNameFuture = DashboardRepository().getPatientName();
-  }
 
   Future<void> _logout(BuildContext context) async {
     final authService = AuthService();
@@ -40,30 +33,21 @@ class _PatientHistoryScreenState extends State<PatientHistoryScreen> {
     }
   }
 
-  void _onItemSelected(int index) async {
+  void _onItemSelected(int index) {
+    final viewModel = context.read<DashboardViewModel>();
+    
     if (index == 0) { // Dashboard
       Navigator.pop(context);
     } else if (index == 1) { // Meus Exames
-      try {
-        final id = await DashboardRepository().getPatientId();
-        final exams = await PatientExamService().getPatientExams(id);
-        if (mounted) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => PatientExamListScreen(
-                exams: exams.data,
-                examResponse: exams,
-              ),
+      if (viewModel.exams != null) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PatientExamListScreen(
+              exams: viewModel.exams!,
             ),
-          );
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Não foi possível carregar os exames.")),
-          );
-        }
+          ),
+        );
       }
     } else if (index == 3) { // Carteirinha
       Navigator.pushReplacement(
@@ -77,6 +61,8 @@ class _PatientHistoryScreenState extends State<PatientHistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final viewModel = context.watch<DashboardViewModel>();
+
     return Scaffold(
       key: _scaffoldKey,
       appBar: NextAppBar(
@@ -85,7 +71,7 @@ class _PatientHistoryScreenState extends State<PatientHistoryScreen> {
       ),
       endDrawer: NextAppDrawer(
         onLogout: () => _logout(context),
-        patientNameFuture: _patientNameFuture,
+        patientNameFuture: Future.value(viewModel.patientName ?? ""),
         selectedIndex: 2, // Histórico de Prontuário
         onItemSelected: _onItemSelected,
       ),

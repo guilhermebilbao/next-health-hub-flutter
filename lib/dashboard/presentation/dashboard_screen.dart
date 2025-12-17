@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:next_healt_hub/dashboard/models/exam/patient_exam_response.dart';
+import 'package:provider/provider.dart';
 import 'package:next_healt_hub/dashboard/presentation/sac/sac_card.dart';
 import 'package:next_healt_hub/dashboard/presentation/sus/sus_card.dart';
 import '../../components/app_bar.dart';
@@ -8,15 +8,13 @@ import '../../components/app_drawer.dart';
 import '../../auth/data/auth_service.dart';
 import '../../app_routes.dart';
 import '../data/dashboard_repository.dart';
-import '../data/patient_exam_service.dart';
-import '../data/patient_history_service.dart';
-import '../models/history/patient_history_models.dart';
 import 'exam/patient_exam_card.dart';
 import 'exam/patient_exam_list_screen.dart';
 import 'history/patient_history_list_screen.dart';
 import 'patient_info_card.dart';
 import 'history/patient_history_card.dart';
 import 'sus/patient_sus_card_screen.dart';
+import 'viewmodel/dashboard_viewmodel.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -30,32 +28,15 @@ class _DashboardScreenState extends State<DashboardScreen>
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int _selectedIndex = 0;
   Timer? _timer;
-  late Future<String> _patientNameFuture;
-  late Future<PatientHistoryResponse> _historyFuture;
-  late Future<PatientExamResponse> _examFuture;
   late AnimationController _pulseController;
-  late PatientHistoryService _patientHistoryService;
-  late PatientExamService _patientExamService;
-  String _patienteId = '';
 
   @override
   void initState() {
     super.initState();
-    _patientHistoryService = PatientHistoryService();
-    _patientExamService = PatientExamService();
 
-    // Carrega o nome apenas uma vez
-    _patientNameFuture = DashboardRepository().getPatientName();
-
-    // CACHE DO FUTURE: Encadeia a busca do ID com a busca do histórico.
-    _historyFuture = DashboardRepository().getPatientId().then((id) {
-      _patienteId = id;
-      return _patientHistoryService.getPatientRecordHistory(id);
-    });
-
-    _examFuture = DashboardRepository().getPatientId().then((id) {
-      _patienteId = id;
-      return _patientExamService.getPatientExams(id);
+    // Carrega os dados do dashboard ao entrar na tela
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<DashboardViewModel>().initDashboard();
     });
 
     // Controlador da animação de pulso
@@ -82,57 +63,43 @@ class _DashboardScreenState extends State<DashboardScreen>
   Future<void> _logout(BuildContext context) async {
     final authService = AuthService();
     await authService.logout();
+    
     if (context.mounted) {
+      // Limpa os dados do ViewModel ao deslogar
+      context.read<DashboardViewModel>().clearData();
+      
       Navigator.of(
         context,
       ).pushNamedAndRemoveUntil(AppRoutes.onboarding, (route) => false);
     }
   }
 
-  void _onItemSelected(int index) async {
+  void _onItemSelected(int index) {
     setState(() {
       _selectedIndex = index;
     });
     
-    // Navigation logic based on index
+    final viewModel = context.read<DashboardViewModel>();
+    
     if (index == 1) { // Meus Exames
-      try {
-        final exams = await _examFuture;
-        if (mounted) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => PatientExamListScreen(
-                exams: exams.data, 
-                examResponse: exams,
-              ),
+      if (viewModel.exams != null) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PatientExamListScreen(
+              exams: viewModel.exams!,
             ),
-          );
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Não foi possível carregar os exames.")),
-          );
-        }
+          ),
+        );
       }
     } else if (index == 2) { // Histórico de Prontuário
-      try {
-        final history = await _historyFuture;
-        if (mounted) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => PatientHistoryScreen(historyResponse: history),
-            ),
-          );
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Não foi possível carregar o histórico.")),
-          );
-        }
+      if (viewModel.history != null) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PatientHistoryScreen(historyResponse: viewModel.history!),
+          ),
+        );
       }
     } else if (index == 3) { // Carteirinha
       Navigator.push(
@@ -141,14 +108,36 @@ class _DashboardScreenState extends State<DashboardScreen>
           builder: (context) => const PatientSusCardScreen(),
         ),
       );
-    } else if (index == 4) { // SAC - Em breve, no action for now or maybe a toast
-       // SAC is disabled/coming soon
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final repository = DashboardRepository();
+    final viewModel = context.watch<DashboardViewModel>();
+
+    if (viewModel.isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (viewModel.errorMessage != null) {
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(viewModel.errorMessage!, style: const TextStyle(color: Colors.red)),
+              ElevatedButton(
+                onPressed: () => viewModel.initDashboard(),
+                child: const Text("Tentar novamente"),
+              )
+            ],
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       key: _scaffoldKey,
@@ -158,27 +147,16 @@ class _DashboardScreenState extends State<DashboardScreen>
       ),
       endDrawer: NextAppDrawer(
         onLogout: () => _logout(context),
-        patientNameFuture: _patientNameFuture,
+        patientNameFuture: Future.value(viewModel.patientName ?? ""),
         selectedIndex: _selectedIndex,
         onItemSelected: _onItemSelected,
       ),
       body: Column(
         children: [
-          FutureBuilder<String>(
-            future: _patientNameFuture,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const SizedBox(
-                  height: 100,
-                  child: Center(child: CircularProgressIndicator()),
-                );
-              }
-              return PatientInfoCard(
-                pulseController: _pulseController,
-                repository: repository,
-                patientName: snapshot.data,
-              );
-            },
+          PatientInfoCard(
+            pulseController: _pulseController,
+            repository: repository,
+            patientName: viewModel.patientName,
           ),
           Expanded(
             child: SingleChildScrollView(
@@ -190,26 +168,26 @@ class _DashboardScreenState extends State<DashboardScreen>
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text(
+                          const Text(
                             'Bem-vindo ao ',
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          Text(
+                          const Text(
                             'NEXT - Saúde One',
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
-                              color: const Color.fromRGBO(27, 106, 123, 1),
+                              color: Color.fromRGBO(27, 106, 123, 1),
                             ),
                           ),
                         ],
                       ),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.only(left: 24.0, right: 24.0),
+                    const Padding(
+                      padding: EdgeInsets.only(left: 24.0, right: 24.0),
                       child: Center(
                         child: Text(
                           'Acesse seus exames e histórico médico de forma rápida e segura',
@@ -220,13 +198,13 @@ class _DashboardScreenState extends State<DashboardScreen>
                     ),
                     const SizedBox(height: 16),
 
-                    PatientExamCard(examsFuture: _examFuture),
+                    PatientExamCard(exams: viewModel.exams),
 
-                    PatientHistoryCard(historyFuture: _historyFuture),
+                    PatientHistoryCard(history: viewModel.history),
 
-                    SusCard(),
+                    const SusCard(),
 
-                    SacCard(),
+                    const SacCard(),
                   ],
                 ),
               ),
