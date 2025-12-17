@@ -110,7 +110,7 @@ class NextAppDrawer extends StatelessWidget {
                 _buildDrawerItem(
                   context: context,
                   icon: Icons.credit_card_outlined,
-                  text: 'Carteirinha',
+                  text: 'Carteirinha Saúde One',
                   index: 3,
                 ),
                 _buildDrawerItem(
@@ -165,11 +165,11 @@ class NextAppDrawer extends StatelessWidget {
           ),
         ),
         onTap: () {
+          Navigator.pop(context);
           if (isLogout) {
             onLogout();
           } else {
             onItemSelected(index);
-            Navigator.pop(context);
           }
         },
       ),

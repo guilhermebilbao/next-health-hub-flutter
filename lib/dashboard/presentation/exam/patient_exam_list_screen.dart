@@ -14,11 +14,15 @@ import '../../models/exam/patient_exam.dart';
 import '../../models/exam/patient_exam_response.dart';
 import '../../models/exam/exam_attachment_file_response.dart';
 import '../../data/patient_exam_attachment_service.dart';
+import '../../data/patient_history_service.dart';
+import '../history/patient_history_list_screen.dart';
+import '../sus/patient_sus_card_screen.dart';
 
 class PatientExamListScreen extends StatefulWidget {
   final List<PatientExam> exams;
+  final PatientExamResponse examResponse;
 
-  const PatientExamListScreen({super.key, required this.exams, required PatientExamResponse examResponse});
+  const PatientExamListScreen({super.key, required this.exams, required this.examResponse});
 
   @override
   State<PatientExamListScreen> createState() => _PatientExamListScreenState();
@@ -43,6 +47,39 @@ class _PatientExamListScreenState extends State<PatientExamListScreen> {
       Navigator.of(context).pushNamedAndRemoveUntil(
         AppRoutes.onboarding,
         (route) => false,
+      );
+    }
+  }
+
+  void _onItemSelected(int index) async {
+    // Navigation logic based on index
+    if (index == 0) { // Dashboard
+      Navigator.pop(context); // Just pop to go back to Dashboard
+    } else if (index == 2) { // Histórico
+      try {
+        final id = await DashboardRepository().getPatientId();
+        final history = await PatientHistoryService().getPatientRecordHistory(id);
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => PatientHistoryScreen(historyResponse: history),
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Não foi possível carregar o histórico.")),
+          );
+        }
+      }
+    } else if (index == 3) { // Carteirinha
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const PatientSusCardScreen(),
+        ),
       );
     }
   }
@@ -133,13 +170,8 @@ class _PatientExamListScreenState extends State<PatientExamListScreen> {
       endDrawer: NextAppDrawer(
         onLogout: () => _logout(context),
         patientNameFuture: _patientNameFuture,
-        selectedIndex: 0,
-        onItemSelected: (value) {
-          Navigator.pop(context);
-          if (value == 1) {
-            // Navegar para Histórico se necessário
-          }
-        },
+        selectedIndex: 1, // Meus Exames
+        onItemSelected: _onItemSelected,
       ),
       body: Stack(
         children: [

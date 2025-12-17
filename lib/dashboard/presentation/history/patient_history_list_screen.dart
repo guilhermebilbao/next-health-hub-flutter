@@ -6,6 +6,9 @@ import '../../../app_routes.dart';
 import '../../data/dashboard_repository.dart';
 import '../../models/history/patient_history_models.dart';
 import 'patient_history_detail_screen.dart';
+import '../../data/patient_exam_service.dart';
+import '../exam/patient_exam_list_screen.dart';
+import '../sus/patient_sus_card_screen.dart';
 
 class PatientHistoryScreen extends StatefulWidget {
   final PatientHistoryResponse historyResponse;
@@ -37,6 +40,41 @@ class _PatientHistoryScreenState extends State<PatientHistoryScreen> {
     }
   }
 
+  void _onItemSelected(int index) async {
+    if (index == 0) { // Dashboard
+      Navigator.pop(context);
+    } else if (index == 1) { // Meus Exames
+      try {
+        final id = await DashboardRepository().getPatientId();
+        final exams = await PatientExamService().getPatientExams(id);
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => PatientExamListScreen(
+                exams: exams.data,
+                examResponse: exams,
+              ),
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Não foi possível carregar os exames.")),
+          );
+        }
+      }
+    } else if (index == 3) { // Carteirinha
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const PatientSusCardScreen(),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -48,13 +86,8 @@ class _PatientHistoryScreenState extends State<PatientHistoryScreen> {
       endDrawer: NextAppDrawer(
         onLogout: () => _logout(context),
         patientNameFuture: _patientNameFuture,
-        selectedIndex: 1,
-        onItemSelected: (index) {
-           Navigator.pop(context); // Fecha drawer
-           if (index == 0) {
-             Navigator.pop(context); // Volta para dashboard
-           }
-        },
+        selectedIndex: 2, // Histórico de Prontuário
+        onItemSelected: _onItemSelected,
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

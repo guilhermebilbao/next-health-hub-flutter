@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:next_healt_hub/dashboard/models/exam/patient_exam_response.dart';
+import 'package:next_healt_hub/dashboard/presentation/sac/sac_card.dart';
+import 'package:next_healt_hub/dashboard/presentation/sus/sus_card.dart';
 import '../../components/app_bar.dart';
 import '../../components/app_drawer.dart';
 import '../../auth/data/auth_service.dart';
@@ -10,8 +12,11 @@ import '../data/patient_exam_service.dart';
 import '../data/patient_history_service.dart';
 import '../models/history/patient_history_models.dart';
 import 'exam/patient_exam_card.dart';
+import 'exam/patient_exam_list_screen.dart';
+import 'history/patient_history_list_screen.dart';
 import 'patient_info_card.dart';
 import 'history/patient_history_card.dart';
+import 'sus/patient_sus_card_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -84,6 +89,63 @@ class _DashboardScreenState extends State<DashboardScreen>
     }
   }
 
+  void _onItemSelected(int index) async {
+    setState(() {
+      _selectedIndex = index;
+    });
+    
+    // Navigation logic based on index
+    if (index == 1) { // Meus Exames
+      try {
+        final exams = await _examFuture;
+        if (mounted) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => PatientExamListScreen(
+                exams: exams.data, 
+                examResponse: exams,
+              ),
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Não foi possível carregar os exames.")),
+          );
+        }
+      }
+    } else if (index == 2) { // Histórico de Prontuário
+      try {
+        final history = await _historyFuture;
+        if (mounted) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => PatientHistoryScreen(historyResponse: history),
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Não foi possível carregar o histórico.")),
+          );
+        }
+      }
+    } else if (index == 3) { // Carteirinha
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const PatientSusCardScreen(),
+        ),
+      );
+    } else if (index == 4) { // SAC - Em breve, no action for now or maybe a toast
+       // SAC is disabled/coming soon
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final repository = DashboardRepository();
@@ -98,11 +160,7 @@ class _DashboardScreenState extends State<DashboardScreen>
         onLogout: () => _logout(context),
         patientNameFuture: _patientNameFuture,
         selectedIndex: _selectedIndex,
-        onItemSelected: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
-        },
+        onItemSelected: _onItemSelected,
       ),
       body: Column(
         children: [
@@ -165,6 +223,10 @@ class _DashboardScreenState extends State<DashboardScreen>
                     PatientExamCard(examsFuture: _examFuture),
 
                     PatientHistoryCard(historyFuture: _historyFuture),
+
+                    SusCard(),
+
+                    SacCard(),
                   ],
                 ),
               ),
