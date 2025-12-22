@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:next_health_hub/shared/app_formatters.dart';
 import 'package:provider/provider.dart';
 import 'package:open_file/open_file.dart';
 import 'package:path_provider/path_provider.dart';
@@ -31,28 +32,30 @@ class _PatientExamListScreenState extends State<PatientExamListScreen> {
   final PatientExamAttachmentService _attachmentService = PatientExamAttachmentService();
   bool _isLoading = false;
 
+  static const Color primaryColor = Color.fromRGBO(27, 106, 123, 1);
+
   Future<void> _logout(BuildContext context) async {
     final authService = AuthService();
     await authService.logout();
     if (context.mounted) {
       Navigator.of(context).pushNamedAndRemoveUntil(
         AppRoutes.onboarding,
-        (route) => false,
+            (route) => false,
       );
     }
   }
 
   void _onItemSelected(int index) {
     final viewModel = context.read<DashboardViewModel>();
-    
+
     if (index == 0) {
       Navigator.pop(context);
     } else if (index == 2) {
-      if (viewModel.history != null) {
+      if (viewModel.historyResponse != null) {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => PatientHistoryScreen(historyResponse: viewModel.history!),
+            builder: (context) => PatientHistoryScreen(historyResponse: viewModel.historyResponse!),
           ),
         );
       }
@@ -79,16 +82,16 @@ class _PatientExamListScreenState extends State<PatientExamListScreen> {
       File? existingFile;
       for (var file in files) {
         if (file is File && file.path.split('/').last.startsWith(attachmentId)) {
-           existingFile = file;
-           break;
+          existingFile = file;
+          break;
         }
       }
 
       if (existingFile != null) {
-         final result = await OpenFile.open(existingFile.path);
-         if (result.type != ResultType.done) {
-            throw Exception(result.message);
-         }
+        final result = await OpenFile.open(existingFile.path);
+        if (result.type != ResultType.done) {
+          throw Exception(result.message);
+        }
       } else {
         final responseMap = await _attachmentService.getExamAttachment(attachmentId);
         final response = ExamAttachmentFileResponse.fromJson(responseMap);
@@ -97,24 +100,24 @@ class _PatientExamListScreenState extends State<PatientExamListScreen> {
           final base64String = response.data!.fileBase64;
           final format = response.data!.fileFormat.toLowerCase();
           final bytes = base64Decode(base64String);
-          
+
           final extension = format.startsWith('.') ? format : '.$format';
           final fileName = '$attachmentId$extension';
           final filePath = '${directory.path}/$fileName';
-          
+
           final file = File(filePath);
           await file.writeAsBytes(bytes);
-          
+
           if (context.mounted) {
-               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Arquivo "$displayFileName" baixado com sucesso!')),
-              );
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Arquivo "$displayFileName" baixado com sucesso!')),
+            );
           }
 
           final result = await OpenFile.open(filePath);
-           if (result.type != ResultType.done) {
+          if (result.type != ResultType.done) {
             throw Exception(result.message);
-         }
+          }
         } else {
           throw Exception(response.message);
         }
@@ -137,6 +140,8 @@ class _PatientExamListScreenState extends State<PatientExamListScreen> {
   @override
   Widget build(BuildContext context) {
     final viewModel = context.watch<DashboardViewModel>();
+    // Prioriza os dados atualizados do ViewModel
+    final examList = viewModel.exams ?? widget.exams;
 
     return Scaffold(
       key: _scaffoldKey,
@@ -159,11 +164,11 @@ class _PatientExamListScreenState extends State<PatientExamListScreen> {
                 padding: const EdgeInsets.only(left: 8.0, top: 8.0),
                 child: TextButton.icon(
                   onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.arrow_back, color: Color.fromRGBO(27, 106, 123, 1)),
+                  icon: const Icon(Icons.arrow_back, color: primaryColor),
                   label: const Text(
                     'Voltar ao Dashboard',
                     style: TextStyle(
-                      color: Color.fromRGBO(27, 106, 123, 1),
+                      color: primaryColor,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -176,55 +181,60 @@ class _PatientExamListScreenState extends State<PatientExamListScreen> {
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: Color.fromRGBO(27, 106, 123, 1),
+                    color: primaryColor,
                   ),
                 ),
               ),
               Expanded(
-                child: ListView.separated(
-                  padding: const EdgeInsets.all(16.0),
-                  itemCount: widget.exams.length,
-                  separatorBuilder: (context, index) => const SizedBox(height: 12),
-                  itemBuilder: (context, index) {
-                    final exam = widget.exams[index];
-                    final hasAttachment = exam.examAttachments != null && exam.examAttachments!.isNotEmpty;
-                    String dateDisplay = 'Data indisponível';
-                    try {
-                      if(exam.examDate.startsWith('0001')) throw Exception();
-                      final date = DateTime.parse(exam.examDate);
-                      dateDisplay = "${date.day}/${date.month}/${date.year}";
-                    } catch (_) {}
+                child: RefreshIndicator(
+                  onRefresh: () => viewModel.initDashboard(),
+                  color: primaryColor,
+                  child: ListView.separated(
+                    padding: const EdgeInsets.all(16.0),
+                    itemCount: examList.length,
+                    separatorBuilder: (context, index) => const SizedBox(height: 12),
+                    itemBuilder: (context, index) {
+                      final exam = examList[index];
+                      final hasAttachment = exam.examAttachments != null && exam.examAttachments!.isNotEmpty;
+                      final dateDisplay = AppFormatters.formateDate(exam.examDate);
 
-                    return Card(
-                      elevation: 2,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      child: ListTile(
-                        leading: const Icon(Icons.biotech, color: Color(0xFF6A1B9A), size: 40),
-                        title: Text(exam.examName, style: const TextStyle(fontWeight: FontWeight.bold)),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(dateDisplay),
-                            if (hasAttachment)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 4.0),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(Icons.attachment, size: 16, color: Colors.grey),
-                                    const SizedBox(width: 4),
-                                    Text(exam.examAttachments!.first.fileName, style: const TextStyle(fontStyle: FontStyle.italic)),
-                                  ],
+                      return Card(
+                        elevation: 2,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        child: ListTile(
+                          leading: const Icon(Icons.biotech, color: Color(0xFF6A1B9A), size: 40),
+                          title: Text(exam.examName, style: const TextStyle(fontWeight: FontWeight.bold)),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(dateDisplay),
+                              if (hasAttachment)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 4.0),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(Icons.attachment, size: 16, color: Colors.grey),
+                                      const SizedBox(width: 4),
+                                      Flexible(
+                                        child: Text(
+                                          exam.examAttachments!.first.fileName,
+                                          style: const TextStyle(fontStyle: FontStyle.italic),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                          ],
+                            ],
+                          ),
+                          onTap: hasAttachment
+                              ? () => _downloadAttachment(exam.examAttachments!.first.id, exam.examAttachments!.first.fileName)
+                              : null,
                         ),
-                        onTap: hasAttachment
-                            ? () => _downloadAttachment(exam.examAttachments!.first.id, exam.examAttachments!.first.fileName)
-                            : null,
-                      ),
-                    );
-                  },
+                      );
+                    },
+                  ),
                 ),
               ),
             ],
@@ -233,7 +243,7 @@ class _PatientExamListScreenState extends State<PatientExamListScreen> {
             Container(
               color: Colors.black.withOpacity(0.5),
               child: const Center(
-                child: CircularProgressIndicator(),
+                child: CircularProgressIndicator(color: Colors.white),
               ),
             ),
         ],

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../models/exam/patient_exam.dart';
-import '../../models/exam/patient_exam_response.dart';
 import 'patient_exam_list_screen.dart';
 
 class PatientExamCard extends StatelessWidget {
