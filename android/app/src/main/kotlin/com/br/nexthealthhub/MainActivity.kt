@@ -1,4 +1,4 @@
-package com.example.next_healt_hub
+package com.br.nexthealthhub
 
 import io.flutter.embedding.android.FlutterActivity
 

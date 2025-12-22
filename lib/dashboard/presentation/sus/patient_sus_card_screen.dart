@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:next_healt_hub/dashboard/presentation/sus/patient_sus_card.dart';
+import 'package:next_health_hub/dashboard/presentation/sus/patient_sus_card.dart';
 import 'package:provider/provider.dart';
 
 import '../../../components/app_bar.dart';
@@ -24,16 +24,15 @@ class _PatientSusCardScreenState extends State<PatientSusCardScreen> {
     final authService = AuthService();
     await authService.logout();
     if (context.mounted) {
-      Navigator.of(context).pushNamedAndRemoveUntil(
-        AppRoutes.onboarding,
-        (route) => false,
-      );
+      Navigator.of(
+        context,
+      ).pushNamedAndRemoveUntil(AppRoutes.onboarding, (route) => false);
     }
   }
 
   void _onItemSelected(int index) {
     final viewModel = context.read<DashboardViewModel>();
-    
+
     if (index == 0) {
       Navigator.pop(context);
     } else if (index == 1) {
@@ -41,9 +40,8 @@ class _PatientSusCardScreenState extends State<PatientSusCardScreen> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => PatientExamListScreen(
-              exams: viewModel.exams!,
-            ),
+            builder: (context) =>
+                PatientExamListScreen(exams: viewModel.exams!),
           ),
         );
       }
@@ -52,7 +50,8 @@ class _PatientSusCardScreenState extends State<PatientSusCardScreen> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => PatientHistoryScreen(historyResponse: viewModel.history!),
+            builder: (context) =>
+                PatientHistoryScreen(historyResponse: viewModel.history!),
           ),
         );
       }
@@ -82,7 +81,10 @@ class _PatientSusCardScreenState extends State<PatientSusCardScreen> {
             padding: const EdgeInsets.only(left: 8.0, top: 8.0),
             child: TextButton.icon(
               onPressed: () => Navigator.pop(context),
-              icon: const Icon(Icons.arrow_back, color: Color.fromRGBO(27, 106, 123, 1)),
+              icon: const Icon(
+                Icons.arrow_back,
+                color: Color.fromRGBO(27, 106, 123, 1),
+              ),
               label: const Text(
                 'Voltar ao Dashboard',
                 style: TextStyle(
@@ -95,7 +97,7 @@ class _PatientSusCardScreenState extends State<PatientSusCardScreen> {
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
             child: Text(
-              'Carteirinha Saude One',
+              'Carteirinha Saúde One',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -108,7 +110,7 @@ class _PatientSusCardScreenState extends State<PatientSusCardScreen> {
               child: PatientSusCard(
                 nomeCompleto: "JOÃO DA SILVA",
                 numeroCartao: "898.000.123.456-78",
-              )
+              ),
             ),
           ),
         ],

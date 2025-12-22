@@ -16,13 +16,10 @@ class PatientHistoryCard extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    // CARD INTERATIVO PARA ABRIR A NOVA TELA
     return Card(
       elevation: 4,
-      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: InkWell(
-        borderRadius: BorderRadius.circular(12),
         onTap: () {
           Navigator.push(
             context,
@@ -31,40 +28,43 @@ class PatientHistoryCard extends StatelessWidget {
             ),
           );
         },
+        borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Row(
             children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withAlpha(32),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.history_edu, color: Colors.blue, size: 30),
+              ),
+              const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(Icons.history_edu, size: 16, color: Colors.blue),
-                    ),
-                    const SizedBox(height: 16),
                     const Text(
                       'Histórico de Prontuário',
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black87,
+                        color: Colors.black,
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      '${history!.data.length} registros disponíveis',
-                      style: const TextStyle(color: Colors.grey, fontSize: 14),
+                    const Text(
+                      'Acesse seu histórico de consultas e atendimentos',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.black54,
+                      ),
                     ),
                   ],
                 ),
               ),
-              const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
             ],
           ),
         ),

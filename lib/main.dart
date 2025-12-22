@@ -4,8 +4,11 @@ import 'package:provider/provider.dart';
 import 'dart:async';
 import 'app_routes.dart';
 import 'dashboard/presentation/viewmodel/dashboard_viewmodel.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 
 Future<void> main() async {
+  // WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+  // FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: './.env');
 

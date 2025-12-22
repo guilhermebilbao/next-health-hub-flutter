@@ -55,7 +55,7 @@ class _LoginPatientViewState extends State<LoginPatientView> {
           context.read<LoginBloc>().add(LoginCodeSubmitted(code));
         },
         onCancel: () {
-           Navigator.of(dialogContext).pop();
+          Navigator.of(dialogContext).pop();
         },
       ),
     );
@@ -63,7 +63,7 @@ class _LoginPatientViewState extends State<LoginPatientView> {
 
   @override
   Widget build(BuildContext context) {
-    const logoImage = 'assets/images/next_healt_logo.png';
+    const logoImage = 'assets/images/next_health_logo.png';
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -111,7 +111,11 @@ class _LoginPatientViewState extends State<LoginPatientView> {
                         logoImage,
                         height: 80,
                         errorBuilder: (context, error, stackTrace) =>
-                            const Icon(Icons.image_not_supported, size: 50, color: Colors.grey),
+                            const Icon(
+                              Icons.image_not_supported,
+                              size: 50,
+                              color: Colors.grey,
+                            ),
                       ),
                       const SizedBox(height: 24),
 

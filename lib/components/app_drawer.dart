@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:next_healt_hub/shared/app_formatters.dart';
+import 'package:next_health_hub/shared/app_formatters.dart';
 
 class NextAppDrawer extends StatelessWidget {
   final VoidCallback onLogout;
@@ -30,10 +30,11 @@ class NextAppDrawer extends StatelessWidget {
                   child: FutureBuilder<String>(
                     future: patientNameFuture,
                     builder: (context, snapshot) {
-                      if (!snapshot.hasData && snapshot.connectionState == ConnectionState.waiting) {
+                      if (!snapshot.hasData &&
+                          snapshot.connectionState == ConnectionState.waiting) {
                         return const Center(child: CircularProgressIndicator());
                       }
-                      
+
                       final name = snapshot.data ?? 'Usuário';
                       final initials = AppFormatters.getInitials(name);
 
@@ -116,8 +117,9 @@ class NextAppDrawer extends StatelessWidget {
                 _buildDrawerItem(
                   context: context,
                   icon: Icons.support_agent_outlined,
-                  text: 'SAC',
+                  text: 'SAC - Em breve',
                   index: 4,
+                  isEnabled: false,
                 ),
               ],
             ),
@@ -143,11 +145,12 @@ class NextAppDrawer extends StatelessWidget {
     required String text,
     required int index,
     bool isLogout = false,
+    bool isEnabled = true,
   }) {
-    final bool isSelected = selectedIndex == index;
+    final bool isSelected = isEnabled && selectedIndex == index;
     final Color selectedColor = const Color.fromRGBO(27, 106, 123, 1);
     final Color selectedItemColor = Colors.white;
-    final Color unselectedItemColor = Colors.black54;
+    final Color unselectedItemColor = isEnabled ? Colors.black54 : Colors.black26;
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
@@ -156,7 +159,11 @@ class NextAppDrawer extends StatelessWidget {
       color: isSelected ? selectedColor : Colors.white,
       clipBehavior: Clip.antiAlias,
       child: ListTile(
-        leading: Icon(icon, color: isSelected ? selectedItemColor : unselectedItemColor),
+        enabled: isEnabled,
+        leading: Icon(
+          icon,
+          color: isSelected ? selectedItemColor : unselectedItemColor,
+        ),
         title: Text(
           text,
           style: TextStyle(
@@ -164,14 +171,16 @@ class NextAppDrawer extends StatelessWidget {
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
           ),
         ),
-        onTap: () {
-          Navigator.pop(context);
-          if (isLogout) {
-            onLogout();
-          } else {
-            onItemSelected(index);
-          }
-        },
+        onTap: isEnabled
+            ? () {
+                Navigator.pop(context);
+                if (isLogout) {
+                  onLogout();
+                } else {
+                  onItemSelected(index);
+                }
+              }
+            : null,
       ),
     );
   }

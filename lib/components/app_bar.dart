@@ -16,7 +16,7 @@ class NextAppBar extends StatelessWidget implements PreferredSizeWidget {
       automaticallyImplyLeading: automaticallyImplyLeading,
       title: Row(
         children: [
-          Image.asset('assets/images/next_healt_logo.png', height: 20),
+          Image.asset('assets/images/next_health_logo.png', height: 20),
           const SizedBox(width: 10),
           const Text(
             'NEXT – Saúde One',

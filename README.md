@@ -1,4 +1,4 @@
-# next_healt_hub
+# next_health_hub
 
 A new Flutter project.
 

@@ -26,10 +26,10 @@ class SusCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.teal.withOpacity(0.1),
+                  color: Colors.deepPurple.withAlpha(32),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.badge, color: Colors.teal, size: 30),
+                child: const Icon(Icons.badge, color: Colors.deepPurple, size: 30),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -37,11 +37,11 @@ class SusCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'Carteirinha Saude One',
+                      'Carteirinha Saúde One',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Color.fromRGBO(27, 106, 123, 1),
+                        color: Colors.black,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -49,13 +49,13 @@ class SusCard extends StatelessWidget {
                       'Acesse sua carteirinha digital de identificacao',
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.grey[600],
+                        color: Colors.black54,
                       ),
                     ),
                   ],
                 ),
               ),
-              const Icon(Icons.arrow_forward_ios, color: Colors.grey),
+             // const Icon(Icons.arrow_forward_ios, color: Colors.grey),
             ],
           ),
         ),

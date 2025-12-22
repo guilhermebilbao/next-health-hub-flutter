@@ -14,8 +14,6 @@ class PatientExamCard extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    final count = exams!.length;
-
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -38,10 +36,10 @@ class PatientExamCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.purple.withOpacity(0.1),
+                  color: Colors.teal.withAlpha(32),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.biotech, color: Colors.purple, size: 30),
+                child: const Icon(Icons.biotech, color: Colors.teal, size: 30),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -49,25 +47,24 @@ class PatientExamCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'Resultados de Exames',
+                      'Meus Exames',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Color.fromRGBO(27, 106, 123, 1),
+                        color: Colors.black,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '$count exames disponíveis',
+                      'Visualize e baixe seus resultados de exames',
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.grey[600],
+                        color: Colors.black54,
                       ),
                     ),
                   ],
                 ),
               ),
-              const Icon(Icons.arrow_forward_ios, color: Colors.grey, size: 16),
             ],
           ),
         ),

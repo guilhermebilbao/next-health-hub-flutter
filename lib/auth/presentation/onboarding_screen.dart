@@ -7,7 +7,7 @@ class OnboardingScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const logoImage = 'assets/images/next_healt_logo.png';
+    const logoImage = 'assets/images/next_health_logo.png';
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -26,19 +26,13 @@ class OnboardingScreen extends StatelessWidget {
               const SizedBox(height: 16),
               const Text(
                 'NEXT – Saúde One',
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               const Text(
                 'Acesse seus exames e informações de saúde de forma rápida e segura',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey,
-                ),
+                style: TextStyle(fontSize: 16, color: Colors.grey),
               ),
               const SizedBox(height: 48),
               Card(
@@ -80,9 +74,7 @@ class OnboardingScreen extends StatelessWidget {
                         const Text(
                           'Acesse seus exames, resultados e documentos médicos',
                           textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Colors.grey,
-                          ),
+                          style: TextStyle(color: Colors.grey),
                         ),
                         const SizedBox(height: 24),
                         AppButton(
