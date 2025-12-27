@@ -15,8 +15,9 @@ final class LoginSubmitted extends LoginEvent {
 }
 
 final class LoginCodeSubmitted extends LoginEvent {
+  final String cpf;
   final String code;
-  const LoginCodeSubmitted(this.code);
+  const LoginCodeSubmitted({required this.cpf, required this.code});
   @override
-  List<Object> get props => [code];
+  List<Object> get props => [cpf, code];
 }

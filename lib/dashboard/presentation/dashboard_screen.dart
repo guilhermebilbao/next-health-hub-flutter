@@ -113,24 +113,85 @@ class _DashboardScreenState extends State<DashboardScreen>
     final viewModel = context.watch<DashboardViewModel>();
 
     if (viewModel.isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return Scaffold(
+        backgroundColor: Colors.white,
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 40.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Image.asset(
+                  'assets/images/next_health_logo.png',
+                  height: 100,
+                  errorBuilder: (context, error, stackTrace) => const Icon(
+                    Icons.medical_services,
+                    size: 80,
+                    color: Color.fromRGBO(27, 106, 123, 1),
+                  ),
+                ),
+                const SizedBox(height: 40),
+                const Text(
+                  "Carregando suas informações...",
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: Color.fromRGBO(27, 106, 123, 1),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: LinearProgressIndicator(
+                    value: viewModel.loadingProgress,
+                    minHeight: 10,
+                    backgroundColor: Colors.grey[200],
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                      Color.fromRGBO(27, 106, 123, 1),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  "${(viewModel.loadingProgress * 100).toInt()}%",
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Color.fromRGBO(27, 106, 123, 1),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
     }
 
     if (viewModel.errorMessage != null) {
       return Scaffold(
         body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                viewModel.errorMessage!,
-                style: const TextStyle(color: Colors.red),
-              ),
-              ElevatedButton(
-                onPressed: () => viewModel.initDashboard(),
-                child: const Text("Tentar novamente"),
-              ),
-            ],
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, size: 60, color: Colors.red),
+                const SizedBox(height: 16),
+                Text(
+                  viewModel.errorMessage!,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.red, fontSize: 16),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: () => viewModel.initDashboard(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color.fromRGBO(27, 106, 123, 1),
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text("Tentar novamente"),
+                ),
+              ],
+            ),
           ),
         ),
       );

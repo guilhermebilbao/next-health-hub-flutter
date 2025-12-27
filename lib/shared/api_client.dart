@@ -4,31 +4,33 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 
 class ApiClient {
-  Future<Map<String, dynamic>> post(String service, Map<String, dynamic> requestBody) async {
-    final baseUrl = dotenv.env['API_BASE_URL'];
+  Future<Map<String, dynamic>> post(
+    String service,
+    Map<String, dynamic> requestBody, {
+    Duration timeout = const Duration(seconds: 60),
+  }) async {
+    final baseUrl = dotenv.env['API_BASE_URL_ANTIGA'];
     debugPrint('API Base URL: $baseUrl');
-    
+
     if (baseUrl == null) {
-      throw Exception('API_BASE_URL is not configured');
+      throw Exception('API_BASE_URL_ANTIGA is not configured');
     }
-    
+
     final url = Uri.parse(baseUrl);
 
-    final body = {
-      "partner": "app",
-      "service": service,
-      "request": requestBody,
-    };
+    final body = {"partner": "app", "service": service, "request": requestBody};
 
     debugPrint('Calling Service: $service');
     // debugPrint('Body: ${jsonEncode(body)}'); // Uncomment if needed
 
     try {
-      final response = await http.post(
-        url,
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode(body),
-      ).timeout(const Duration(seconds: 30));
+      final response = await http
+          .post(
+            url,
+            headers: {"Content-Type": "application/json"},
+            body: jsonEncode(body),
+          )
+          .timeout(timeout);
 
       debugPrint('Response Status: ${response.statusCode}');
 
@@ -38,6 +40,9 @@ class ApiClient {
         debugPrint('Response Body: ${response.body}');
         throw Exception('Failed to load data: ${response.statusCode}');
       }
+    } on http.ClientException catch (e) {
+      debugPrint('Network Error: $e');
+      rethrow;
     } catch (e) {
       debugPrint('API Client Error: $e');
       rethrow;

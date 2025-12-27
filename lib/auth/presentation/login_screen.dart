@@ -52,7 +52,13 @@ class _LoginPatientViewState extends State<LoginPatientView> {
       builder: (dialogContext) => TwoFactorAuthDialog(
         onVerified: (code) {
           Navigator.of(dialogContext).pop();
-          context.read<LoginBloc>().add(LoginCodeSubmitted(code));
+          // Agora passamos o CPF e o Código
+          context.read<LoginBloc>().add(
+            LoginCodeSubmitted(
+              cpf: _cpfController.text,
+              code: code,
+            ),
+          );
         },
         onCancel: () {
           Navigator.of(dialogContext).pop();

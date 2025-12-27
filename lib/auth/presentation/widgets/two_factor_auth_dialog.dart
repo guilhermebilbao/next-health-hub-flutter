@@ -18,7 +18,7 @@ class TwoFactorAuthDialog extends StatefulWidget {
 class _TwoFactorAuthDialogState extends State<TwoFactorAuthDialog> {
   final TextEditingController _controller = TextEditingController();
   final FocusNode _focusNode = FocusNode();
-  static const int _codeLength = 4;
+  static const int _codeLength = 6;
   static const Color _themeColor = Color.fromRGBO(27, 106, 123, 1);
 
   @override
@@ -54,7 +54,7 @@ class _TwoFactorAuthDialogState extends State<TwoFactorAuthDialog> {
         mainAxisSize: MainAxisSize.min,
         children: [
           const Text(
-            'Digite o código de 4 dígitos enviado para seu email g**********ao@g****.com',
+            'Digite o código enviado para seu email g**********ao@g****.com',
             textAlign: TextAlign.center,
             style: TextStyle(color: Colors.grey, fontSize: 14),
           ),
@@ -63,34 +63,37 @@ class _TwoFactorAuthDialogState extends State<TwoFactorAuthDialog> {
             alignment: Alignment.center,
             children: [
               // Visual boxes
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(_codeLength, (index) {
-                  final code = _controller.text;
-                  final isFilled = index < code.length;
-                  return Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    width: 35,
-                    height: 45,
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: isFilled ? _themeColor : Colors.grey.shade300,
-                        width: 2,
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(_codeLength, (index) {
+                    final code = _controller.text;
+                    final isFilled = index < code.length;
+                    return Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      width: 35,
+                      height: 45,
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: isFilled ? _themeColor : Colors.grey.shade300,
+                          width: 2,
+                        ),
+                        borderRadius: BorderRadius.circular(8),
+                        color: Colors.white,
                       ),
-                      borderRadius: BorderRadius.circular(8),
-                      color: Colors.white,
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      isFilled ? code[index] : '',
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: _themeColor,
+                      alignment: Alignment.center,
+                      child: Text(
+                        isFilled ? code[index].toUpperCase() : '',
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: _themeColor,
+                        ),
                       ),
-                    ),
-                  );
-                }),
+                    );
+                  }),
+                ),
               ),
               // Invisible TextField
               Opacity(
@@ -98,13 +101,18 @@ class _TwoFactorAuthDialogState extends State<TwoFactorAuthDialog> {
                 child: TextField(
                   controller: _controller,
                   focusNode: _focusNode,
-                  keyboardType: TextInputType.number,
+                  keyboardType: TextInputType.text,
                   maxLength: _codeLength,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  enableInteractiveSelection: false,
+                  contextMenuBuilder: (context, editableTextState) => const SizedBox.shrink(),
+                  textCapitalization: TextCapitalization.characters,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9]')),
+                  ],
                   onChanged: (value) {
                     setState(() {});
                     if (value.length == _codeLength) {
-                      widget.onVerified(value);
+                      widget.onVerified(value.toUpperCase());
                     }
                   },
                   decoration: const InputDecoration(
@@ -137,7 +145,7 @@ class _TwoFactorAuthDialogState extends State<TwoFactorAuthDialog> {
                     TextButton(
                       onPressed: () {
                         //TODO acionar o API de reenvio de codigo pra email
-                       // Navigator.of(context).pop();
+                        Navigator.of(context).pop();
                       },
                       child: const Text('OK'),
                     ),
@@ -147,12 +155,11 @@ class _TwoFactorAuthDialogState extends State<TwoFactorAuthDialog> {
             );
           },
           child: const Text(
-            'Não recebi código',
+            'Gerar novo código',
             style: TextStyle(color: Colors.blue),
           ),
         ),
       ],
-
     );
   }
 }

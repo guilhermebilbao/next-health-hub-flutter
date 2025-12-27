@@ -35,11 +35,11 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
   ) async {
     emit(LoginLoading());
     try {
-      final isValid = await _authService.verifyCode(event.code);
+      final isValid = await _authService.verifyCode(event.cpf, event.code);
       if (isValid) {
         emit(LoginVerified());
       } else {
-        emit(LoginFailure('Código incorreto. Tente novamente.'));
+        emit(LoginFailure('Código incorreto ou expirado. Tente novamente.'));
       }
     } catch (e) {
       final message = e.toString().replaceAll('Exception: ', '');
