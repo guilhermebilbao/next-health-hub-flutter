@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../../shared/api_client.dart';
 import '../models/exam/patient_exam_response.dart';
 
@@ -9,11 +8,8 @@ class PatientExamService {
   PatientExamService({ApiClient? apiClient}) : _apiClient = apiClient ?? ApiClient();
 
   Future<PatientExamResponse> getPatientExams(String patientId) async {
-    final requestBody = {
+    final Map<String, dynamic> requestBody = {
       "patientId": patientId,
-      "username": dotenv.env['USERNAME_API'],
-      "password": dotenv.env['PASSWORD_API'],
-      "codeproject": dotenv.env['CODEPROJETC_API'],
     };
 
     try {

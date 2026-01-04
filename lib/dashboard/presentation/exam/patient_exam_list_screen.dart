@@ -189,7 +189,24 @@ class _PatientExamListScreenState extends State<PatientExamListScreen> {
                 child: RefreshIndicator(
                   onRefresh: () => viewModel.initDashboard(),
                   color: primaryColor,
-                  child: ListView.separated(
+                  child: examList.isEmpty
+                      ? ListView( // Usamos ListView para que o RefreshIndicator continue funcionando
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    children: const [
+                      SizedBox(height: 100),
+                      Center(
+                        child: Text(
+                          "Você ainda não tem exames para visualizar.",
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ],
+                  ) : ListView.separated(
                     padding: const EdgeInsets.all(16.0),
                     itemCount: examList.length,
                     separatorBuilder: (context, index) => const SizedBox(height: 12),

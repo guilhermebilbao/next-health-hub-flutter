@@ -35,7 +35,7 @@ class AuthService {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final Map<String, dynamic> responseBody = jsonDecode(response.body);
-
+        // code: 429 muitas tentativas de autenticacao
         // Se a resposta contiver 'success' diretamente ou dentro de um campo data
         final bool success = responseBody['success'] ?? (responseBody['data']?['success'] ?? false);
         
@@ -85,11 +85,28 @@ class AuthService {
           
           // Salva as informações do usuário e o token
           await prefs.setString('patientToken', verifyModel.jwt!);
+          if (verifyModel.expiresAt != null) {
+            await prefs.setString('patientTokenExpiresAt', verifyModel.expiresAt!);
+          }
+          
           if (verifyModel.user != null) {
-            await prefs.setString('patientCpf', verifyModel.user!.cpf);
-            await prefs.setString('patientName', verifyModel.user!.name);
-            await prefs.setString('email', verifyModel.user!.email);
-            await prefs.setString('patientId', '9d8e62c4-b798-4d4b-9d03-5763264b9bdf');
+            final user = verifyModel.user!;
+            await prefs.setString('patientCpf', user.cpf);
+            await prefs.setString('patientName', user.patientName ?? user.name);
+            await prefs.setString('email', user.email);
+            
+            if (user.patientId != null) {
+              await prefs.setString('patientId', user.patientId!);
+            }
+            if (user.birthDate != null) {
+              await prefs.setString('patientBirthDate', user.birthDate!);
+            }
+            if (user.socialName != null) {
+              await prefs.setString('patientSocialName', user.socialName!);
+            }
+            if (user.cns != null) {
+              await prefs.setString('patientCns', user.cns!);
+            }
           }
           await prefs.setString('userType', 'patient');
           
@@ -99,6 +116,21 @@ class AuthService {
       return false;
     } catch (e) {
       print('Erro na verificação do código: $e');
+      return false;
+    }
+  }
+
+  Future<bool> isTokenValid() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('patientToken');
+    final expiresAtStr = prefs.getString('patientTokenExpiresAt');
+
+    if (token == null || expiresAtStr == null) return false;
+
+    try {
+      final expiresAt = DateTime.parse(expiresAtStr);
+      return DateTime.now().isBefore(expiresAt);
+    } catch (e) {
       return false;
     }
   }

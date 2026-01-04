@@ -1,4 +1,3 @@
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../../shared/api_client.dart';
 import '../models/history/patient_history_models.dart';
 
@@ -8,15 +7,8 @@ class PatientHistoryService {
   PatientHistoryService({ApiClient? apiClient}) : _apiClient = apiClient ?? ApiClient();
 
   Future<PatientHistoryResponse> getPatientRecordHistory(String patientId) async {
-    final username = dotenv.env['USERNAME_API'];
-    final password = dotenv.env['PASSWORD_API'];
-    final codeproject = dotenv.env['CODEPROJETC_API'];
-
-    final requestBody = {
+    final Map<String, dynamic> requestBody = {
       "patientId": patientId,
-      "username": username,
-      "password": password,
-      "codeproject": codeproject,
     };
 
     try {

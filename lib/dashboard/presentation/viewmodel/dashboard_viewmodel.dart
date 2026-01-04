@@ -13,6 +13,7 @@ class DashboardViewModel extends ChangeNotifier {
 
   // Estados
   String? patientName;
+  String? patientCns;
   PatientExamResponse? examResponse;
   PatientHistoryResponse? historyResponse;
   bool isLoading = false;
@@ -27,6 +28,7 @@ class DashboardViewModel extends ChangeNotifier {
     loadingProgress = 0.0;
     errorMessage = null;
     patientName = null;
+    patientCns = null;
     examResponse = null;
     historyResponse = null;
     notifyListeners();
@@ -43,10 +45,10 @@ class DashboardViewModel extends ChangeNotifier {
       notifyListeners();
       debugPrint("DashboardViewModel: ID recuperado: $id em ${stopWatch.elapsedMilliseconds}ms");
 
-      debugPrint("DashboardViewModel: Iniciando chamadas paralelas (Name, Exams, History)...");
+      debugPrint("DashboardViewModel: Iniciando chamadas paralelas (Name, CNS, Exams, History)...");
 
       int completedTasks = 0;
-      const int totalTasks = 3;
+      const int totalTasks = 4;
 
       Future<T> _logTask<T>(String name, Future<T> task) async {
         final start = stopWatch.elapsedMilliseconds;
@@ -54,12 +56,14 @@ class DashboardViewModel extends ChangeNotifier {
         try {
           final result = await task.timeout(const Duration(seconds: 60));
           completedTasks++;
-          // Começa em 0.1 (ID) e vai até 1.0. As 3 tarefas dividem o restante 0.9.
+          // Começa em 0.1 (ID) e vai até 1.0. As tarefas dividem o restante 0.9.
           loadingProgress = 0.1 + (completedTasks / totalTasks) * 0.9;
           notifyListeners();
           
           final end = stopWatch.elapsedMilliseconds;
           debugPrint("DashboardViewModel: [Tarefa: $name] Finalizada com sucesso em ${end - start}ms");
+          debugPrint("DashboardViewModel: [Tarefa: $name] Finalizada com sucesso em ${end - start}ms");
+
           return result;
         } catch (e) {
           debugPrint("DashboardViewModel: [Tarefa: $name] FALHOU após ${stopWatch.elapsedMilliseconds - start}ms - Erro: $e");
@@ -69,16 +73,18 @@ class DashboardViewModel extends ChangeNotifier {
 
       final results = await Future.wait([
         _logTask("getPatientName", _repository.getPatientName()),
+        _logTask("getPatientCns", _repository.getPatientCns()),
         _logTask("getPatientExams", _examService.getPatientExams(id)),
         _logTask("getPatientRecordHistory", _historyService.getPatientRecordHistory(id)),
       ]);
 
       patientName = results[0] as String;
-      examResponse = results[1] as PatientExamResponse;
-      historyResponse = results[2] as PatientHistoryResponse;
+      patientCns = results[1] as String?;
+      examResponse = results[2] as PatientExamResponse;
+      historyResponse = results[3] as PatientHistoryResponse;
 
       debugPrint("DashboardViewModel: Todos os dados carregados com sucesso em ${stopWatch.elapsedMilliseconds}ms");
-
+      debugPrint("DashboardViewModel: CNS recuperado do cache: '$patientCns'");
     } catch (e) {
       errorMessage = "Erro ao carregar dados do dashboard";
       debugPrint("DashboardViewModel ERROR após ${stopWatch.elapsedMilliseconds}ms: $e");
@@ -97,6 +103,7 @@ class DashboardViewModel extends ChangeNotifier {
 
   void clearData() {
     patientName = null;
+    patientCns = null;
     examResponse = null;
     historyResponse = null;
     errorMessage = null;

@@ -108,8 +108,8 @@ class _PatientSusCardScreenState extends State<PatientSusCardScreen> {
           Expanded(
             child: Center(
               child: PatientSusCard(
-                nomeCompleto: "JOÃO DA SILVA",
-                numeroCartao: "898.000.123.456-78",
+                nomeCompleto: viewModel.patientName?.toUpperCase() ?? "PACIENTE",
+                numeroCartao: viewModel.patientCns ?? "--- --- --- ---",
               ),
             ),
           ),

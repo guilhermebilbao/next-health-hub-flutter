@@ -3,26 +3,29 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'dart:async';
 import 'app_routes.dart';
+import 'auth/data/auth_service.dart';
 import 'dashboard/presentation/viewmodel/dashboard_viewmodel.dart';
 
 Future<void> main() async {
-  // WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
-  // FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: './.env');
+
+  final authService = AuthService();
+  final bool loggedIn = await authService.isTokenValid();
 
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => DashboardViewModel()..initDashboard()),
       ],
-      child: const MyApp(),
+      child: MyApp(initialRoute: loggedIn ? AppRoutes.home : AppRoutes.onboarding),
     ),
   );
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final String initialRoute;
+  const MyApp({super.key, required this.initialRoute});
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +36,7 @@ class MyApp extends StatelessWidget {
       // Define as rotas centralizadas
       routes: AppRoutes.routes,
       // Define a rota inicial
-      initialRoute: AppRoutes.onboarding,
+      initialRoute: initialRoute,
     );
   }
 }
