@@ -7,6 +7,10 @@ import '../../models/patient_request_token_model.dart';
 import '../../models/patient_verify_token_model.dart';
 
 class AuthService {
+  final http.Client _client;
+
+  AuthService({http.Client? client}) : _client = client ?? http.Client();
+
   Future<PatientRequestTokenModel> loginPatient(String cpf) async {
     try {
       final cleanCPF = cpf.replaceAll(RegExp(r'\D'), '');
@@ -24,7 +28,7 @@ class AuthService {
 
       final url = Uri.parse(apiUrl + authRequestToken);
 
-      final response = await http.post(
+      final response = await _client.post(
         url,
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
@@ -35,8 +39,6 @@ class AuthService {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final Map<String, dynamic> responseBody = jsonDecode(response.body);
-        // code: 429 muitas tentativas de autenticacao
-        // Se a resposta contiver 'success' diretamente ou dentro de um campo data
         final bool success = responseBody['success'] ?? (responseBody['data']?['success'] ?? false);
         
         if (success) {
@@ -67,7 +69,7 @@ class AuthService {
 
       final url = Uri.parse(apiUrl + authVerifyToken);
 
-      final response = await http.post(
+      final response = await _client.post(
         url,
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
@@ -83,7 +85,6 @@ class AuthService {
         if (verifyModel.success && verifyModel.jwt != null) {
           final prefs = await SharedPreferences.getInstance();
           
-          // Salva as informações do usuário e o token
           await prefs.setString('patientToken', verifyModel.jwt!);
           if (verifyModel.expiresAt != null) {
             await prefs.setString('patientTokenExpiresAt', verifyModel.expiresAt!);

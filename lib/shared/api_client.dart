@@ -5,6 +5,10 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiClient {
+  final http.Client _client;
+
+  ApiClient({http.Client? client}) : _client = client ?? http.Client();
+
   Future<Map<String, dynamic>> post(
     String service,
     Map<String, dynamic> requestBody, {
@@ -21,16 +25,20 @@ class ApiClient {
 
     final url = Uri.parse('$baseUrl$proxy');
 
+    // Criamos uma cópia mutável do requestBody para evitar erros de tipagem (Map<String, String>)
+    // e para não alterar o mapa original passado por parâmetro.
+    final Map<String, dynamic> finalRequestBody = Map<String, dynamic>.from(requestBody);
+
     // Adiciona credenciais comuns se não for o serviço de anexo
     if (service != "getreportattachementbyid") {
-      requestBody.addAll({
+      finalRequestBody.addAll({
         "username": dotenv.env['USERNAME_API'],
         "password": dotenv.env['PASSWORD_API'],
         "codeproject": dotenv.env['CODEPROJETC_API'],
       });
     }
 
-    final body = {"partner": "app", "service": service, "request": requestBody};
+    final body = {"partner": "app", "service": service, "request": finalRequestBody};
 
     debugPrint('Calling Service: $service');
 
@@ -46,7 +54,7 @@ class ApiClient {
         headers["Authorization"] = "Bearer $token";
       }
 
-      final response = await http
+      final response = await _client
           .post(
             url,
             headers: headers,
