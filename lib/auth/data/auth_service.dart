@@ -1,13 +1,16 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../models/patient_model.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import '../../models/patient_request_token_model.dart';
 import '../../models/patient_verify_token_model.dart';
 
 class AuthService {
   final http.Client _client;
+  // Instância do Firebase Messaging
+  final FirebaseMessaging _fcm = FirebaseMessaging.instance;
 
   AuthService({http.Client? client}) : _client = client ?? http.Client();
 
@@ -31,22 +34,23 @@ class AuthService {
       final response = await _client.post(
         url,
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          "cpf": cleanCPF,
-          "recaptcha_token": "",
-        }),
+        body: jsonEncode({"cpf": cleanCPF, "recaptcha_token": ""}),
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final Map<String, dynamic> responseBody = jsonDecode(response.body);
-        final bool success = responseBody['success'] ?? (responseBody['data']?['success'] ?? false);
-        
+        final bool success =
+            responseBody['success'] ??
+            (responseBody['data']?['success'] ?? false);
+
         if (success) {
           final data = responseBody['data'] ?? responseBody;
           final patientAuth = PatientRequestTokenModel.fromJson(data);
           return patientAuth;
         } else {
-          throw Exception(responseBody['message'] ?? 'Erro na resposta da API.');
+          throw Exception(
+            responseBody['message'] ?? 'Erro na resposta da API.',
+          );
         }
       } else {
         throw Exception('Erro na requisição token: ${response.statusCode}');
@@ -72,10 +76,7 @@ class AuthService {
       final response = await _client.post(
         url,
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          "cpf": cleanCPF,
-          "token": code,
-        }),
+        body: jsonEncode({"cpf": cleanCPF, "token": code}),
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
@@ -84,18 +85,21 @@ class AuthService {
 
         if (verifyModel.success && verifyModel.jwt != null) {
           final prefs = await SharedPreferences.getInstance();
-          
+
           await prefs.setString('patientToken', verifyModel.jwt!);
           if (verifyModel.expiresAt != null) {
-            await prefs.setString('patientTokenExpiresAt', verifyModel.expiresAt!);
+            await prefs.setString(
+              'patientTokenExpiresAt',
+              verifyModel.expiresAt!,
+            );
           }
-          
+
           if (verifyModel.user != null) {
             final user = verifyModel.user!;
             await prefs.setString('patientCpf', user.cpf);
             await prefs.setString('patientName', user.patientName ?? user.name);
             await prefs.setString('email', user.email);
-            
+
             if (user.patientId != null) {
               await prefs.setString('patientId', user.patientId!);
             }
@@ -110,7 +114,10 @@ class AuthService {
             }
           }
           await prefs.setString('userType', 'patient');
-          
+
+          // FCM
+          await _handleFcmRegistration(verifyModel.jwt!);
+
           return true;
         }
       }
@@ -118,6 +125,39 @@ class AuthService {
     } catch (e) {
       print('Erro na verificação do código: $e');
       return false;
+    }
+  }
+
+  // Gerencia a obtenção e registro do token FCM
+  // Verificar posteriormente se vai ser preciso enviar o JTW nesse momento
+  // TODO extrair para o diretorio Firebase
+  Future<void> _handleFcmRegistration(String jwt) async {
+    try {
+      // Solicita permissão (necessário para iOS)
+      NotificationSettings settings = await _fcm.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+
+      if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+        // Gera o Token do dispositivo
+        String? fcmToken = await _fcm.getToken();
+
+        if (fcmToken != null) {
+          print('-------------------------------------------------------');
+          print('FCM TOKEN GERADO: $fcmToken');
+          print('PLATAFORMA: ${Platform.isAndroid ? "Android" : "iOS"}');
+          print('-------------------------------------------------------');
+
+          //Quando chaamr a classe para enviar para o servidor
+          //await _registerTokenOnServer (fcmToken);
+        }
+      } else {
+        print('Usuário recusou permissões de notificação.');
+      }
+    } catch (e) {
+      print('Erro ao processar FCM: $e');
     }
   }
 
@@ -137,7 +177,12 @@ class AuthService {
   }
 
   Future<void> logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
+    try {
+      //TODO Verificar se vai precisar limpar token FCM tambem
+      print('Efetuando logout e limpando dados locais...');
+    } finally {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+    }
   }
 }
