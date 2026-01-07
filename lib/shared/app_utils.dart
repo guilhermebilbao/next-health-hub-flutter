@@ -1,3 +1,7 @@
+import 'package:flutter/material.dart';
+import '../auth/data/auth_service.dart';
+import '../app_routes.dart';
+
 class AppUtils {
   static bool areCodesEqual(String? code1, String? code2) {
     if (code1 == null || code2 == null) return false;
@@ -7,5 +11,16 @@ class AppUtils {
     final i1 = int.tryParse(c1);
     final i2 = int.tryParse(c2);
     return i1 != null && i2 != null && i1 == i2;
+  }
+
+  static Future<void> logout(BuildContext context) async {
+    final authService = AuthService();
+    await authService.logout();
+    if (context.mounted) {
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        AppRoutes.onboarding,
+        (route) => false,
+      );
+    }
   }
 }

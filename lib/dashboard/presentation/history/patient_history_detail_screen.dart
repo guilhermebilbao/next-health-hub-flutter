@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../components/app_bar.dart';
 import '../../../components/app_drawer.dart';
-import '../../../auth/data/auth_service.dart';
-import '../../../app_routes.dart';
+import '../../../shared/app_formatters.dart';
 import '../../data/dashboard_repository.dart';
 import '../../models/history/patient_history_models.dart';
 import '../../../shared/app_utils.dart';
@@ -26,23 +25,16 @@ class _PatientRecordDetailScreenState extends State<PatientRecordDetailScreen> {
     _patientNameFuture = DashboardRepository().getPatientName();
   }
 
-  Future<void> _logout(BuildContext context) async {
-    final authService = AuthService();
-    await authService.logout();
-    if (context.mounted) {
-      Navigator.of(context).pushNamedAndRemoveUntil(
-        AppRoutes.onboarding,
-            (route) => false,
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     String dateDisplay = widget.record.dataAtendimento;
     try {
       final date = DateTime.parse(widget.record.dataAtendimento);
-      dateDisplay = "${date.day}/${date.month}/${date.year}, ${date.hour}:${date.minute}";
+      final day = date.day.toString().padLeft(2, '0');
+      final month = date.month.toString().padLeft(2, '0');
+      final hour = date.hour.toString().padLeft(2, '0');
+      final minute = date.minute.toString().padLeft(2, '0');
+      dateDisplay = "$day/$month/${date.year}, $hour:$minute";
     } catch (_) {}
 
     final filteredProcedures = widget.record.procedimentos
@@ -64,7 +56,7 @@ class _PatientRecordDetailScreenState extends State<PatientRecordDetailScreen> {
         onMenuPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
       ),
       endDrawer: NextAppDrawer(
-        onLogout: () => _logout(context),
+        onLogout: () => AppUtils.logout(context),
         patientNameFuture: _patientNameFuture,
         selectedIndex: 1,
         onItemSelected: (int value) {
@@ -151,8 +143,44 @@ class _PatientRecordDetailScreenState extends State<PatientRecordDetailScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       if (widget.record.anamnese.trim().isNotEmpty) ...[
-                        _buildSectionTitle('Anamnese'),
-                        Text(widget.record.anamnese, style: const TextStyle(fontSize: 15, height: 1.4)),
+                        _buildSectionTitle('Anamnese / Evoluções'),
+                        ...AppFormatters.parseAnamnese(widget.record.anamnese).map((evolution) {
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[50],
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.grey[200]!),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (evolution.date.isNotEmpty) ...[
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.history_edu, size: 16, color: Color.fromRGBO(27, 106, 123, 1)),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        evolution.date,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12,
+                                          color: Colors.black54,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const Divider(),
+                                ],
+                                Text(
+                                  evolution.content,
+                                  style: const TextStyle(fontSize: 14, height: 1.5, color: Colors.black87),
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
                         const Divider(height: 32),
                       ],
                       if (widget.record.exameFisico.trim().isNotEmpty) ...[

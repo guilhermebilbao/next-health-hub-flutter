@@ -26,17 +26,6 @@ class _PatientHistoryScreenState extends State<PatientHistoryScreen> {
 
   static const Color primaryColor = Color.fromRGBO(27, 106, 123, 1);
 
-  Future<void> _logout(BuildContext context) async {
-    final authService = AuthService();
-    await authService.logout();
-    if (context.mounted) {
-      Navigator.of(context).pushNamedAndRemoveUntil(
-        AppRoutes.onboarding,
-            (route) => false,
-      );
-    }
-  }
-
   void _onItemSelected(int index) {
     final viewModel = context.read<DashboardViewModel>();
 
@@ -104,7 +93,7 @@ class _PatientHistoryScreenState extends State<PatientHistoryScreen> {
         onMenuPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
       ),
       endDrawer: NextAppDrawer(
-        onLogout: () => _logout(context),
+        onLogout: () => AppUtils.logout(context),
         patientNameFuture: Future.value(viewModel.patientName ?? ""),
         selectedIndex: 2,
         onItemSelected: _onItemSelected,

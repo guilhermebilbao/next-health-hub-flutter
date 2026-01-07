@@ -1,6 +1,12 @@
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 
 import '../dashboard/models/history/patient_record.dart';
+class MedicalEvolution {
+  final String content;
+  final String date;
+
+  MedicalEvolution({required this.content, required this.date});
+}
 
 class AppFormatters {
   static MaskTextInputFormatter get cpf {
@@ -16,10 +22,8 @@ class AppFormatters {
     List<String> parts = name.trim().split(RegExp(r'\s+'));
     if (parts.isEmpty) return '';
     if (parts.length == 1) {
-       // Se tiver apenas um nome, pega as duas primeiras letras ou a única letra
        return parts[0].substring(0, parts[0].length >= 2 ? 2 : 1).toUpperCase();
     }
-    // Pega a primeira letra do primeiro e do ultimo nome
     return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
   }
 
@@ -35,5 +39,45 @@ class AppFormatters {
     } catch (_) {
       return dateString;
     }
+  }
+
+  static List<MedicalEvolution> parseAnamnese(String text) {
+    if (text.isEmpty) return [];
+    
+    final dateRegex = RegExp(r'\(Data: (\d{2}/\d{2}/\d{4} \d{2}:\d{2})\)');
+    final matches = dateRegex.allMatches(text).toList();
+
+    if (matches.isEmpty) {
+      String cleanContent = text
+          .replaceAll(RegExp(r'<[^>]*>'), '')
+          .replaceAll('&nbsp;', ' ')
+          .replaceAll(RegExp(r'\r\n'), '\n')
+          .trim();
+          
+      return cleanContent.isNotEmpty 
+          ? [MedicalEvolution(content: cleanContent, date: "")] 
+          : [];
+    }
+
+    List<MedicalEvolution> evolutions = [];
+    int lastIndex = 0;
+    for (var match in matches) {
+      String content = text.substring(lastIndex, match.start).trim();
+      String date = match.group(1) ?? "";
+
+      content = content
+          .replaceAll(RegExp(r'<[^>]*>'), '')
+          .replaceAll('&nbsp;', ' ')
+          .replaceAll(RegExp(r'-\s+'), '')
+          .replaceAll(RegExp(r'\r\n'), '\n')
+          .trim();
+
+      if (content.isNotEmpty) {
+        evolutions.add(MedicalEvolution(content: content, date: date));
+      }
+      lastIndex = match.end;
+    }
+
+    return evolutions.reversed.toList();
   }
 }

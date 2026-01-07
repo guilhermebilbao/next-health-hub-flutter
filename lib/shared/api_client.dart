@@ -25,18 +25,7 @@ class ApiClient {
 
     final url = Uri.parse('$baseUrl$proxy');
 
-    // Criamos uma cópia mutável do requestBody para evitar erros de tipagem (Map<String, String>)
-    // e para não alterar o mapa original passado por parâmetro.
     final Map<String, dynamic> finalRequestBody = Map<String, dynamic>.from(requestBody);
-
-    // Adiciona credenciais comuns se não for o serviço de anexo
-    if (service != "getreportattachementbyid") {
-      finalRequestBody.addAll({
-        "username": dotenv.env['USERNAME_API'],
-        "password": dotenv.env['PASSWORD_API'],
-        "codeproject": dotenv.env['CODEPROJETC_API'],
-      });
-    }
 
     final body = {"partner": "app", "service": service, "request": finalRequestBody};
 

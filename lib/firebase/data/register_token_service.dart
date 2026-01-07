@@ -1,12 +1,11 @@
 import 'dart:io';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../../shared/api_client.dart';
 
 class RegisterTokenService {
   final ApiClient _apiClient;
 
   RegisterTokenService({ApiClient? apiClient}) : _apiClient = apiClient ?? ApiClient();
- // TODO apenas um molde deve ajustar conforme definido no servico
+ ///TODO apenas um molde deve ajustar conforme definido no servico
   Future<void> _registerTokenOnServer(String fcmToken) async {
     try {
       final Map<String, dynamic> requestBody = {

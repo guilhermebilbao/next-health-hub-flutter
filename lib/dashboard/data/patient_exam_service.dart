@@ -21,7 +21,8 @@ class PatientExamService {
 
       return PatientExamResponse.fromJson(response);
     } on TimeoutException {
-      throw Exception('O servidor demorou muito para responder. Por favor, verifique sua conexão ou tente novamente mais tarde.');
+      throw Exception('O servidor demorou muito para responder. Por favor, '
+          'verifique sua conexão ou tente novamente mais tarde.');
     } catch (e) {
       throw Exception('Não foi possível carregar os exames: $e');
     }

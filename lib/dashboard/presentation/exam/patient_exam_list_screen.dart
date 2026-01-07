@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:next_health_hub/shared/app_formatters.dart';
+import 'package:next_health_hub/shared/app_utils.dart';
 import 'package:provider/provider.dart';
 import 'package:open_file/open_file.dart';
 import 'package:path_provider/path_provider.dart';
@@ -33,17 +34,6 @@ class _PatientExamListScreenState extends State<PatientExamListScreen> {
   bool _isLoading = false;
 
   static const Color primaryColor = Color.fromRGBO(27, 106, 123, 1);
-
-  Future<void> _logout(BuildContext context) async {
-    final authService = AuthService();
-    await authService.logout();
-    if (context.mounted) {
-      Navigator.of(context).pushNamedAndRemoveUntil(
-        AppRoutes.onboarding,
-            (route) => false,
-      );
-    }
-  }
 
   void _onItemSelected(int index) {
     final viewModel = context.read<DashboardViewModel>();
@@ -78,9 +68,8 @@ class _PatientExamListScreenState extends State<PatientExamListScreen> {
 
     try {
       final directory = await getApplicationDocumentsDirectory();
-      final files = directory.listSync();
       File? existingFile;
-      for (var file in files) {
+      await for (var file in directory.list()) {
         if (file is File && file.path.split('/').last.startsWith(attachmentId)) {
           existingFile = file;
           break;
@@ -150,7 +139,7 @@ class _PatientExamListScreenState extends State<PatientExamListScreen> {
         onMenuPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
       ),
       endDrawer: NextAppDrawer(
-        onLogout: () => _logout(context),
+        onLogout: () => AppUtils.logout(context),
         patientNameFuture: Future.value(viewModel.patientName ?? ""),
         selectedIndex: 1,
         onItemSelected: _onItemSelected,
@@ -225,29 +214,37 @@ class _PatientExamListScreenState extends State<PatientExamListScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(dateDisplay),
-                              if (hasAttachment)
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 4.0),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Icon(Icons.attachment, size: 16, color: Colors.grey),
-                                      const SizedBox(width: 4),
-                                      Flexible(
-                                        child: Text(
-                                          exam.examAttachments!.first.fileName,
-                                          style: const TextStyle(fontStyle: FontStyle.italic),
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
+                              if (hasAttachment) ...[
+                                const SizedBox(height: 8),
+                                ...exam.examAttachments!.map((attachment) {
+                                  return InkWell(
+                                    onTap: () => _downloadAttachment(attachment.id, attachment.fileName),
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(vertical: 4.0),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Icon(Icons.attachment, size: 16, color: primaryColor),
+                                          const SizedBox(width: 4),
+                                          Flexible(
+                                            child: Text(
+                                              attachment.fileName,
+                                              style: const TextStyle(
+                                                fontStyle: FontStyle.italic,
+                                                color: primaryColor,
+                                                decoration: TextDecoration.underline,
+                                              ),
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                    ],
-                                  ),
-                                ),
+                                    ),
+                                  );
+                                }).toList(),
+                              ],
                             ],
                           ),
-                          onTap: hasAttachment
-                              ? () => _downloadAttachment(exam.examAttachments!.first.id, exam.examAttachments!.first.fileName)
-                              : null,
                         ),
                       );
                     },
