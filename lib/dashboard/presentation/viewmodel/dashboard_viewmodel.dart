@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../../services/notification_service.dart';
 import '../../data/dashboard_repository.dart';
 import '../../data/patient_exam_service.dart';
 import '../../data/patient_history_service.dart';
@@ -10,6 +12,7 @@ class DashboardViewModel extends ChangeNotifier {
   final _repository = DashboardRepository();
   final _examService = PatientExamService();
   final _historyService = PatientHistoryService();
+  final _notificationService = NotificationService();
 
   // Estados
   String? patientName;
@@ -43,9 +46,13 @@ class DashboardViewModel extends ChangeNotifier {
 
       loadingProgress = 0.1;
       notifyListeners();
-      debugPrint("DashboardViewModel: ID recuperado: $id em ${stopWatch.elapsedMilliseconds}ms");
+      debugPrint(
+        "DashboardViewModel: ID recuperado: $id em ${stopWatch.elapsedMilliseconds}ms",
+      );
 
-      debugPrint("DashboardViewModel: Iniciando chamadas paralelas (Name, CNS, Exams, History)...");
+      debugPrint(
+        "DashboardViewModel: Iniciando chamadas paralelas (Name, CNS, Exams, History)...",
+      );
 
       int completedTasks = 0;
       const int totalTasks = 4;
@@ -59,14 +66,17 @@ class DashboardViewModel extends ChangeNotifier {
           // Começa em 0.1 (ID) e vai até 1.0. As tarefas dividem o restante 0.9.
           loadingProgress = 0.1 + (completedTasks / totalTasks) * 0.9;
           notifyListeners();
-          
+
           final end = stopWatch.elapsedMilliseconds;
-          debugPrint("DashboardViewModel: [Tarefa: $name] Finalizada com sucesso em ${end - start}ms");
-          debugPrint("DashboardViewModel: [Tarefa: $name] Finalizada com sucesso em ${end - start}ms");
+          debugPrint(
+            "DashboardViewModel: [Tarefa: $name] Finalizada com sucesso em ${end - start}ms",
+          );
 
           return result;
         } catch (e) {
-          debugPrint("DashboardViewModel: [Tarefa: $name] FALHOU após ${stopWatch.elapsedMilliseconds - start}ms - Erro: $e");
+          debugPrint(
+            "DashboardViewModel: [Tarefa: $name] FALHOU após ${stopWatch.elapsedMilliseconds - start}ms - Erro: $e",
+          );
           rethrow;
         }
       }
@@ -75,7 +85,10 @@ class DashboardViewModel extends ChangeNotifier {
         _logTask("getPatientName", _repository.getPatientName()),
         _logTask("getPatientCns", _repository.getPatientCns()),
         _logTask("getPatientExams", _examService.getPatientExams(id)),
-        _logTask("getPatientRecordHistory", _historyService.getPatientRecordHistory(id)),
+        _logTask(
+          "getPatientRecordHistory",
+          _historyService.getPatientRecordHistory(id),
+        ),
       ]);
 
       patientName = results[0] as String;
@@ -83,21 +96,52 @@ class DashboardViewModel extends ChangeNotifier {
       examResponse = results[2] as PatientExamResponse;
       historyResponse = results[3] as PatientHistoryResponse;
 
-      debugPrint("DashboardViewModel: Todos os dados carregados com sucesso em ${stopWatch.elapsedMilliseconds}ms");
+      // Agendamento notificação aniversário se houver birthDate
+      _scheduleBirthdayIfNeeded();
+
+      debugPrint(
+        "DashboardViewModel: Todos os dados carregados com sucesso em ${stopWatch.elapsedMilliseconds}ms",
+      );
       debugPrint("DashboardViewModel: CNS recuperado do cache: '$patientCns'");
     } catch (e) {
       errorMessage = "Erro ao carregar dados do dashboard";
-      debugPrint("DashboardViewModel ERROR após ${stopWatch.elapsedMilliseconds}ms: $e");
+      debugPrint(
+        "DashboardViewModel ERROR após ${stopWatch.elapsedMilliseconds}ms: $e",
+      );
 
       // Tratamento específico para Timeout
       if (e.toString().contains("TimeoutException")) {
-        errorMessage = "O servidor demorou muito para responder. Verifique sua conexão.";
+        errorMessage =
+            "O servidor demorou muito para responder. Verifique sua conexão.";
       }
     } finally {
       stopWatch.stop();
       isLoading = false;
       loadingProgress = 1.0;
       notifyListeners();
+    }
+  }
+
+  Future<void> _scheduleBirthdayIfNeeded() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final birthDateStr = prefs.getString('patientBirthDate');
+      final name = patientName ?? prefs.getString('patientName') ?? "Paciente";
+
+      if (birthDateStr != null && birthDateStr.isNotEmpty) {
+        final birthDate = DateTime.parse(birthDateStr);
+        await _notificationService.scheduleBirthdayNotification(
+          birthDate,
+          name,
+        );
+        debugPrint(
+          "DashboardViewModel: Notificação de aniversário agendada para $birthDateStr",
+        );
+      }
+    } catch (e) {
+      debugPrint(
+        "DashboardViewModel: Erro ao agendar notificação de aniversário: $e",
+      );
     }
   }
 

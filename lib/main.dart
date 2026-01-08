@@ -7,6 +7,7 @@ import 'package:firebase_messaging/firebase_messaging.dart'; // Adicionado
 import 'app_routes.dart';
 import 'auth/data/auth_service.dart';
 import 'dashboard/presentation/viewmodel/dashboard_viewmodel.dart';
+import 'services/notification_service.dart';
 
 // Handler para mensagens em background
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -22,6 +23,9 @@ Future<void> main() async {
 
   //Configura o handler de background
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
+  // Inicializa o serviço de notificações locais
+  await NotificationService().init();
 
   await dotenv.load(fileName: './.env');
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:next_health_hub/shared/app_formatters.dart';
+import 'package:next_health_hub/services/notification_service.dart';
 
 class NextAppDrawer extends StatelessWidget {
   final VoidCallback onLogout;
@@ -125,6 +126,15 @@ class NextAppDrawer extends StatelessWidget {
             ),
           ),
           Padding(
+            padding: const EdgeInsets.only(bottom: 10.0),
+            child: _buildDrawerItem(
+              context: context,
+              icon: Icons.notifications_active_outlined,
+              text: 'Testar Notificação',
+              index: -2,
+            ),
+          ),
+          Padding(
             padding: const EdgeInsets.only(bottom: 20.0),
             child: _buildDrawerItem(
               context: context,
@@ -150,7 +160,9 @@ class NextAppDrawer extends StatelessWidget {
     final bool isSelected = isEnabled && selectedIndex == index;
     final Color selectedColor = const Color.fromRGBO(27, 106, 123, 1);
     final Color selectedItemColor = Colors.white;
-    final Color unselectedItemColor = isEnabled ? Colors.black54 : Colors.black26;
+    final Color unselectedItemColor = isEnabled
+        ? Colors.black54
+        : Colors.black26;
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
@@ -176,6 +188,8 @@ class NextAppDrawer extends StatelessWidget {
                 Navigator.pop(context);
                 if (isLogout) {
                   onLogout();
+                } else if (index == -2) {
+                  NotificationService().showInstantNotification();
                 } else {
                   onItemSelected(index);
                 }
