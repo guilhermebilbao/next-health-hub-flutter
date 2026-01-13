@@ -1,9 +1,9 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import '../../firebase/data/token_service.dart';
 import '../../models/patient_request_token_model.dart';
 import '../../models/patient_verify_token_model.dart';
 
@@ -130,10 +130,9 @@ class AuthService {
 
   // Gerencia a obtenção e registro do token FCM
   // Verificar posteriormente se vai ser preciso enviar o JTW nesse momento
-  // TODO extrair para o diretorio Firebase
   Future<void> _handleFcmRegistration(String jwt) async {
     try {
-      // Solicita permissão (necessário para iOS)
+      // Solicita permissão
       NotificationSettings settings = await _fcm.requestPermission(
         alert: true,
         badge: true,
@@ -141,17 +140,31 @@ class AuthService {
       );
 
       if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-        // Gera o Token do dispositivo
         String? fcmToken = await _fcm.getToken();
 
         if (fcmToken != null) {
-          print('-------------------------------------------------------');
-          print('FCM TOKEN GERADO: $fcmToken');
-          print('PLATAFORMA: ${Platform.isAndroid ? "Android" : "iOS"}');
-          print('-------------------------------------------------------');
+          final prefs = await SharedPreferences.getInstance();
+          // Pega o último token enviado com sucesso para o servidor
+          String? lastRegisteredToken = prefs.getString('last_fcm_token');
 
-          //Quando chaamr a classe para enviar para o servidor
-          //await _registerTokenOnServer (fcmToken);
+          // SÓ envia para o servidor se o token mudou OU se nunca foi enviado
+          if (fcmToken != lastRegisteredToken) {
+            print('FCM TOKEN NOVO OU ALTERADO: $fcmToken. Registrando...');
+
+            final registerService = TokenService();
+            await registerService.manageTokenOnServer(
+              fcmToken,
+              jwt,
+              '/register',
+            );
+
+            // Salva localmente que este token já foi enviado com sucesso
+            await prefs.setString('last_fcm_token', fcmToken);
+          } else {
+            print(
+              'FCM TOKEN já está atualizado no servidor. Pulando registro.',
+            );
+          }
         }
       } else {
         print('Usuário recusou permissões de notificação.');
@@ -178,11 +191,38 @@ class AuthService {
 
   Future<void> logout() async {
     try {
-      //TODO Verificar se vai precisar limpar token FCM tambem
-      print('Efetuando logout e limpando dados locais...');
+      final prefs = await SharedPreferences.getInstance();
+
+      // Recupera os dados necessários antes de limpar o storage
+      final String? jwt = prefs.getString('patientToken');
+      // Usa o token atual do FCM caso o 'last_fcm_token' não exista
+      String? fcmToken = prefs.getString('last_fcm_token');
+
+      fcmToken ??= await _fcm.getToken();
+
+      print('Efetuando logout e desvinculando token: $fcmToken');
+
+      // Se tiver os dados, avisamos o servidor para desvincular o token
+      if (jwt != null && fcmToken != null) {
+        try {
+          final registerService = TokenService();
+          // Chamada para desvincular o token no backend
+          await registerService.manageTokenOnServer(
+            fcmToken,
+            jwt,
+            '/unregister',
+          );
+        } catch (e) {
+          print('Erro ao desregistrar FCM no logout (servidor): $e');
+        }
+      }
+    } catch (e) {
+      print('Erro ao processar lógica de logout: $e');
     } finally {
+      // Limpa todos os dados locais independentemente de sucesso na API
       final prefs = await SharedPreferences.getInstance();
       await prefs.clear();
+      print('Dados locais limpos.');
     }
   }
 }
