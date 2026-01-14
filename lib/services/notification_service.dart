@@ -46,13 +46,18 @@ class NotificationService {
     androidImplementation?.requestExactAlarmsPermission();
   }
 
-  /// TODO apos apresentacao retirar esse método de demonstracao
-  Future<void> showInstantNotification() async {
+  /// Exibe uma notificação mesmo em foreground
+  Future<void> showNotification({
+    int id = 0,
+    String? title,
+    String? body,
+    String? payload,
+  }) async {
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
-          'test_channel',
-          'Teste',
-          channelDescription: 'Canal para testes de notificação',
+          'main_channel',
+          'Notificações Gerais',
+          channelDescription: 'Canal principal de notificações',
           importance: Importance.max,
           priority: Priority.high,
           showWhen: true,
@@ -71,10 +76,20 @@ class NotificationService {
     );
 
     await flutterLocalNotificationsPlugin.show(
-      0,
-      'Parabéns para voce! 🎂',
-      'A equipe Next Health Hub te deseja um feliz aniversário e muita saúde!',
+      id,
+      title,
+      body,
       platformChannelSpecifics,
+      payload: payload,
+    );
+  }
+
+  /// TODO apos apresentacao retirar esse método de demonstracao
+  Future<void> showInstantNotification() async {
+    await showNotification(
+      title: 'Parabéns para voce! 🎂',
+      body:
+          'A equipe Next Health Hub te deseja um feliz aniversário e muita saúde!',
     );
   }
 

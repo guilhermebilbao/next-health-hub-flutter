@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -15,6 +17,17 @@ class AuthService {
   AuthService({http.Client? client}) : _client = client ?? http.Client();
 
   Future<PatientRequestTokenModel> loginPatient(String cpf) async {
+    // --- VERIFICAÇÃO PROATIVA DE REDE ---
+    final connectivityResult = await (Connectivity().checkConnectivity());
+    if (connectivityResult.contains(ConnectivityResult.none)) {
+      debugPrint('AuthService: Bloqueando tentativa de login - Sem internet.');
+      throw Exception(
+        'Sem conexão com a internet. Verifique seu Wi-Fi ou dados móveis.',
+      );
+    }
+    debugPrint(
+      'AuthService: Iniciando solicitação de login para CPF: ${cpf.substring(0, 3)}.***.***-${cpf.substring(cpf.length - 2)}',
+    );
     try {
       final cleanCPF = cpf.replaceAll(RegExp(r'\D'), '');
 
@@ -22,11 +35,8 @@ class AuthService {
       final String authRequestToken = dotenv.env['AUTH_REQUEST_TOKEN'] ?? '';
 
       if (apiUrl.isEmpty) {
-        throw Exception('API_BASE_URL não configurada no arquivo .env');
-      }
-
-      if (authRequestToken.isEmpty) {
-        throw Exception('AUTH_REQUEST_TOKEN não configurada no arquivo .env');
+        debugPrint('AuthService ERROR: API_BASE_URL não configurada');
+        throw Exception('Erro de configuração do servidor.');
       }
 
       final url = Uri.parse(apiUrl + authRequestToken);
@@ -44,32 +54,37 @@ class AuthService {
             (responseBody['data']?['success'] ?? false);
 
         if (success) {
+          debugPrint('AuthService: Código 2FA enviado com sucesso.');
           final data = responseBody['data'] ?? responseBody;
           final patientAuth = PatientRequestTokenModel.fromJson(data);
           return patientAuth;
         } else {
+          debugPrint(
+            'AuthService: API retornou erro no corpo: ${responseBody['message']}',
+          );
           throw Exception(
-            responseBody['message'] ?? 'Erro na resposta da API.',
+            responseBody['message'] ?? 'Falha ao processar login.',
           );
         }
       } else {
-        throw Exception('Erro na requisição token: ${response.statusCode}');
+        debugPrint('AuthService ERROR: Status Code ${response.statusCode}');
+        throw Exception(
+          'O servidor encontrou um problema. Tente novamente mais tarde.',
+        );
       }
     } catch (e) {
+      debugPrint('AuthService Catch: $e');
       if (e is Exception) rethrow;
-      throw Exception('Falha na requisição do token: $e');
+      throw Exception('Não foi possível conectar ao servidor.');
     }
   }
 
   Future<bool> verifyCode(String cpf, String code) async {
+    debugPrint('AuthService: Verificando código 2FA...');
     try {
       final cleanCPF = cpf.replaceAll(RegExp(r'\D'), '');
       final String apiUrl = dotenv.env['API_BASE_URL'] ?? '';
       final String authVerifyToken = dotenv.env['AUTH_VERIFY_TOKEN'] ?? '';
-
-      if (apiUrl.isEmpty || authVerifyToken.isEmpty) {
-        throw Exception('Configurações de API ausentes no .env');
-      }
 
       final url = Uri.parse(apiUrl + authVerifyToken);
 
@@ -84,6 +99,10 @@ class AuthService {
         final verifyModel = PatientVerifyTokenModel.fromJson(responseBody);
 
         if (verifyModel.success && verifyModel.jwt != null) {
+          debugPrint(verifyModel.jwt);
+          debugPrint(
+            'AuthService: Token JWT recebido. Salvando credenciais...',
+          );
           final prefs = await SharedPreferences.getInstance();
 
           await prefs.setString('patientToken', verifyModel.jwt!);
@@ -102,6 +121,8 @@ class AuthService {
 
             if (user.patientId != null) {
               await prefs.setString('patientId', user.patientId!);
+
+              debugPrint(user.patientId!);
             }
             if (user.birthDate != null) {
               await prefs.setString('patientBirthDate', user.birthDate!);
@@ -115,24 +136,34 @@ class AuthService {
           }
           await prefs.setString('userType', 'patient');
 
+          debugPrint(
+            'AuthService: Login verificado com sucesso. Iniciando registro FCM...',
+          );
           // FCM
           await _handleFcmRegistration(verifyModel.jwt!);
 
           return true;
+        } else {
+          debugPrint(
+            'AuthService: Falha na validação do código - Resposta negativa do servidor.',
+          );
         }
+      } else {
+        debugPrint(
+          'AuthService ERROR: Status code na verificação: ${response.statusCode}',
+        );
       }
       return false;
     } catch (e) {
-      print('Erro na verificação do código: $e');
+      debugPrint('AuthService ERROR na verificação: $e');
       return false;
     }
   }
 
   // Gerencia a obtenção e registro do token FCM
-  // Verificar posteriormente se vai ser preciso enviar o JTW nesse momento
   Future<void> _handleFcmRegistration(String jwt) async {
     try {
-      // Solicita permissão
+      debugPrint('AuthService: Solicitando permissões de notificação...');
       NotificationSettings settings = await _fcm.requestPermission(
         alert: true,
         badge: true,
@@ -142,35 +173,33 @@ class AuthService {
       if (settings.authorizationStatus == AuthorizationStatus.authorized) {
         String? fcmToken = await _fcm.getToken();
 
+        debugPrint(fcmToken);
+        debugPrint('AuthService: Token FCM obtido.');
+
         if (fcmToken != null) {
           final prefs = await SharedPreferences.getInstance();
-          // Pega o último token enviado com sucesso para o servidor
           String? lastRegisteredToken = prefs.getString('last_fcm_token');
 
-          // SÓ envia para o servidor se o token mudou OU se nunca foi enviado
           if (fcmToken != lastRegisteredToken) {
-            print('FCM TOKEN NOVO OU ALTERADO: $fcmToken. Registrando...');
-
+            debugPrint(
+              'AuthService: Registrando novo token FCM no servidor...',
+            );
             final registerService = TokenService();
             await registerService.manageTokenOnServer(
               fcmToken,
               jwt,
               '/register',
             );
-
-            // Salva localmente que este token já foi enviado com sucesso
             await prefs.setString('last_fcm_token', fcmToken);
           } else {
-            print(
-              'FCM TOKEN já está atualizado no servidor. Pulando registro.',
-            );
+            debugPrint('AuthService: Token FCM já registrado anteriormente.');
           }
         }
       } else {
-        print('Usuário recusou permissões de notificação.');
+        debugPrint('AuthService: Usuário recusou permissões de notificação.');
       }
     } catch (e) {
-      print('Erro ao processar FCM: $e');
+      debugPrint('AuthService ERROR no processamento FCM: $e');
     }
   }
 
@@ -190,39 +219,33 @@ class AuthService {
   }
 
   Future<void> logout() async {
+    debugPrint('AuthService: Iniciando processo de logout...');
     try {
       final prefs = await SharedPreferences.getInstance();
 
-      // Recupera os dados necessários antes de limpar o storage
       final String? jwt = prefs.getString('patientToken');
-      // Usa o token atual do FCM caso o 'last_fcm_token' não exista
       String? fcmToken = prefs.getString('last_fcm_token');
-
       fcmToken ??= await _fcm.getToken();
 
-      print('Efetuando logout e desvinculando token: $fcmToken');
-
-      // Se tiver os dados, avisamos o servidor para desvincular o token
       if (jwt != null && fcmToken != null) {
         try {
+          debugPrint('AuthService: Solicitando desvinculação de token FCM...');
           final registerService = TokenService();
-          // Chamada para desvincular o token no backend
           await registerService.manageTokenOnServer(
             fcmToken,
             jwt,
             '/unregister',
           );
         } catch (e) {
-          print('Erro ao desregistrar FCM no logout (servidor): $e');
+          debugPrint('AuthService: Erro ao desregistrar FCM no logout: $e');
         }
       }
     } catch (e) {
-      print('Erro ao processar lógica de logout: $e');
+      debugPrint('AuthService ERROR no logout: $e');
     } finally {
-      // Limpa todos os dados locais independentemente de sucesso na API
       final prefs = await SharedPreferences.getInstance();
       await prefs.clear();
-      print('Dados locais limpos.');
+      debugPrint('AuthService: Dados locais limpos. Logout concluído.');
     }
   }
 }

@@ -41,12 +41,15 @@ class DashboardViewModel extends ChangeNotifier {
   }
 
   void _initConnectivity() {
+    debugPrint("DashboardViewModel: Inicializando monitoramento de conectividade...");
     _connectivitySubscription = Connectivity().onConnectivityChanged.listen((
       results,
     ) {
       final bool hasConnection = results.any(
         (result) => result != ConnectivityResult.none,
       );
+
+      debugPrint("DashboardViewModel: Conectividade alterada - Online: $hasConnection");
 
       if (isOffline && hasConnection) {
         isOffline = false;
@@ -69,6 +72,8 @@ class DashboardViewModel extends ChangeNotifier {
   Future<void> initDashboard() async {
     if (isLoading) return;
 
+    debugPrint("DashboardViewModel: Inciando processo de inicialização de dados...");
+
     // CARREGAMENTO LOCAL (OFFLINE-FIRST)
     await _loadLocalData();
 
@@ -78,21 +83,20 @@ class DashboardViewModel extends ChangeNotifier {
     notifyListeners();
 
     final stopWatch = Stopwatch()..start();
-    debugPrint("DashboardViewModel: Iniciando carregamento do dashboard...");
 
     try {
       // Verifica conectividade antes de tentar
       final connectivityResult = await Connectivity().checkConnectivity();
       if (connectivityResult.contains(ConnectivityResult.none)) {
+        debugPrint("DashboardViewModel: Sem conexão de rede disponível. Mantendo cache.");
         isOffline = true;
         isLoading = false;
         notifyListeners();
         return;
       }
 
-      debugPrint("DashboardViewModel: Buscando ID do paciente...");
+      debugPrint("DashboardViewModel: Buscando ID do paciente para sincronização remota...");
       final id = await _repository.getPatientId();
-      print(id);
 
       loadingProgress = 0.1;
       notifyListeners();
@@ -101,14 +105,16 @@ class DashboardViewModel extends ChangeNotifier {
       const int totalTasks = 4;
 
       Future<T> _logTask<T>(String name, Future<T> task) async {
-        final start = stopWatch.elapsedMilliseconds;
+        debugPrint("DashboardViewModel: Iniciando tarefa: $name");
         try {
-          final result = await task.timeout(const Duration(seconds: 60));
+          final result = await task.timeout(const Duration(seconds: 30));
           completedTasks++;
           loadingProgress = 0.1 + (completedTasks / totalTasks) * 0.9;
+          debugPrint("DashboardViewModel: Tarefa finalizada com sucesso: $name");
           notifyListeners();
           return result;
         } catch (e) {
+          debugPrint("DashboardViewModel: Erro na tarefa $name: $e");
           rethrow;
         }
       }
@@ -130,33 +136,36 @@ class DashboardViewModel extends ChangeNotifier {
 
       isOffline = false;
 
-      // PERSISTÊNCIA LOCAL (SALVAR PARA PRÓXIMA VEZ)
+      debugPrint("DashboardViewModel: Sincronização remota concluída. Salvando dados localmente.");
       await _saveDataLocally();
 
-      // Agendamento notificação aniversário se houver birthDate
       _scheduleBirthdayIfNeeded();
     } catch (e) {
-      debugPrint("DashboardViewModel ERROR: $e");
+      debugPrint("DashboardViewModel: Falha na inicialização remota: $e");
 
       if (e is SocketException ||
           e.toString().contains("SocketException") ||
-          e.toString().contains("Network is unreachable")) {
+          e.toString().contains("Network is unreachable") ||
+          e is TimeoutException) {
         isOffline = true;
+        debugPrint("DashboardViewModel: Dispositivo parece estar offline ou servidor inacessível.");
       }
 
       if (patientName == null) {
-        errorMessage = "Sem conexão e sem dados salvos.";
+        errorMessage = "Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.";
       }
     } finally {
       stopWatch.stop();
       isLoading = false;
       loadingProgress = 1.0;
       notifyListeners();
+      debugPrint("DashboardViewModel: Processo de inicialização finalizado em ${stopWatch.elapsedMilliseconds}ms");
     }
   }
 
   // MÉTODO PARA CARREGAR DO CACHE
   Future<void> _loadLocalData() async {
+    debugPrint("DashboardViewModel: Carregando dados do armazenamento local...");
     try {
       final prefs = await SharedPreferences.getInstance();
 
@@ -181,8 +190,10 @@ class DashboardViewModel extends ChangeNotifier {
       }
 
       if (patientName != null) {
-        debugPrint("DashboardViewModel: Dados locais carregados com sucesso.");
+        debugPrint("DashboardViewModel: Cache local restaurado com sucesso para o paciente: $patientName");
         notifyListeners();
+      } else {
+        debugPrint("DashboardViewModel: Nenhum dado em cache encontrado.");
       }
     } catch (e) {
       debugPrint("DashboardViewModel: Erro ao carregar cache local: $e");
@@ -191,6 +202,7 @@ class DashboardViewModel extends ChangeNotifier {
 
   // MÉTODO PARA SALVAR NO CACHE
   Future<void> _saveDataLocally() async {
+    debugPrint("DashboardViewModel: Persistindo dados no armazenamento local...");
     try {
       final prefs = await SharedPreferences.getInstance();
 
@@ -209,6 +221,7 @@ class DashboardViewModel extends ChangeNotifier {
           jsonEncode(historyResponse!.toJson()),
         );
       }
+      debugPrint("DashboardViewModel: Dados persistidos com sucesso.");
     } catch (e) {
       debugPrint("DashboardViewModel: Erro ao salvar cache local: $e");
     }
@@ -216,12 +229,14 @@ class DashboardViewModel extends ChangeNotifier {
 
   // Limpar cache no logout
   Future<void> clearAllCache() async {
+    debugPrint("DashboardViewModel: Limpando todos os dados em cache...");
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_keyExamData);
     await prefs.remove(_keyHistoryData);
     await prefs.remove(_keyPatientName);
     await prefs.remove(_keyPatientCns);
     clearData();
+    debugPrint("DashboardViewModel: Cache limpo.");
   }
 
   Future<void> _scheduleBirthdayIfNeeded() async {
@@ -232,6 +247,7 @@ class DashboardViewModel extends ChangeNotifier {
 
       if (birthDateStr != null && birthDateStr.isNotEmpty) {
         final birthDate = DateTime.parse(birthDateStr);
+        debugPrint("DashboardViewModel: Agendando notificação de aniversário para $name em $birthDateStr");
         await _notificationService.scheduleBirthdayNotification(
           birthDate,
           name,

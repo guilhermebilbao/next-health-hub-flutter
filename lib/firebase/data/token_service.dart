@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:device_info_plus/device_info_plus.dart';
@@ -15,6 +16,9 @@ class TokenService {
     String jwt,
     String endpoint,
   ) async {
+    debugPrint(
+      'TokenService: Iniciando envio do token FCM para o servidor (Endpoint: $endpoint)',
+    );
     try {
       // 1. Monta a URL dinamicamente
       final String baseUrl = dotenv.env['API_BASE_URL'] ?? '';
@@ -42,6 +46,8 @@ class TokenService {
           deviceId = iosInfo.identifierForVendor ?? 'unknown';
           deviceModel = iosInfo.utsname.machine;
         }
+
+        debugPrint('TokenService: Identificador do dispositivo: $deviceId');
 
         body = {
           "fcmToken": fcmToken,
@@ -74,14 +80,14 @@ class TokenService {
       }
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        print('Sucesso ao executar $endpoint no servidor.');
+        debugPrint('TokenService: Sucesso ao executar $endpoint no servidor.');
       } else {
-        print(
-          'Falha ao executar $endpoint: ${response.statusCode} - ${response.body}',
+        debugPrint(
+          'TokenService: Falha ao executar $endpoint: ${response.statusCode}',
         );
       }
     } catch (e) {
-      print('Erro crítico no RegisterTokenService ao acessar $endpoint: $e');
+      debugPrint('TokenService: Erro ao gerenciar token FCM: $e');
     }
   }
 }
