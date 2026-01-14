@@ -11,6 +11,15 @@ class PatientExamResponse {
     required this.data,
   });
 
+  // Método adicionado
+  Map<String, dynamic> toJson() {
+    return {
+      'statusCode': statusCode,
+      'message': message,
+      'data': data.map((item) => item.toJson()).toList(),
+    };
+  }
+
   factory PatientExamResponse.fromJson(Map<String, dynamic> json) {
     return PatientExamResponse(
       statusCode: json['statusCode'] ?? 0,

@@ -19,6 +19,18 @@ class PatientExam {
     this.examAttachments,
   });
 
+  Map<String, dynamic> toJson() {
+    return {
+      'patientExamineId': patientExamineId,
+      'examId': examId,
+      'examName': examName,
+      'examDate': examDate,
+      'externalViewerUrl': externalViewerUrl,
+      'dicomViewerUrl': dicomViewerUrl,
+      'examAttachments': examAttachments?.map((e) => e.toJson()).toList(),
+    };
+  }
+
   factory PatientExam.fromJson(Map<String, dynamic> json) {
     return PatientExam(
       patientExamineId: json['patientExamineId'] ?? '',

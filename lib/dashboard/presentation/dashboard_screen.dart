@@ -28,6 +28,7 @@ class _DashboardScreenState extends State<DashboardScreen>
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   Timer? _timer;
   late AnimationController _pulseController;
+  bool? _wasOffline;
 
   @override
   void initState() {
@@ -65,7 +66,7 @@ class _DashboardScreenState extends State<DashboardScreen>
 
     if (context.mounted) {
       // Limpa os dados do ViewModel ao deslogar
-      context.read<DashboardViewModel>().clearData();
+      context.read<DashboardViewModel>().clearAllCache();
 
       Navigator.of(
         context,
@@ -111,6 +112,25 @@ class _DashboardScreenState extends State<DashboardScreen>
   Widget build(BuildContext context) {
     final repository = DashboardRepository();
     final viewModel = context.watch<DashboardViewModel>();
+
+    if (_wasOffline != null && _wasOffline != viewModel.isOffline) {
+      final isNowOffline = viewModel.isOffline;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(isNowOffline
+                  ? "O aplicativo está em modo offline."
+                  : "O aplicativo está online."),
+              backgroundColor: isNowOffline ? Colors.orange : Colors.green,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+      });
+    }
+    _wasOffline = viewModel.isOffline;
 
     if (viewModel.isLoading) {
       return Scaffold(
@@ -215,6 +235,7 @@ class _DashboardScreenState extends State<DashboardScreen>
             pulseController: _pulseController,
             repository: repository,
             patientName: viewModel.patientName,
+            isOffline: viewModel.isOffline,
           ),
           Expanded(
             child: SingleChildScrollView(

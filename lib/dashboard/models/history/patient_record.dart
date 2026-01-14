@@ -27,6 +27,20 @@ class PatientRecord {
     required this.solicitacoesExames,
   });
 
+  Map<String, dynamic> toJson() {
+    return {
+      'medicalRecordNumber': medicalRecordNumber,
+      'codigoAtendimento': codigoAtendimento,
+      'dataAtendimento': dataAtendimento,
+      'anamnese': anamnese,
+      'exameFisico': exameFisico,
+      'conduta': conduta,
+      'procedimentos': procedimentos.map((i) => i.toJson()).toList(),
+      'medicamentos': medicamentos.map((i) => i.toJson()).toList(),
+      'solicitacoesExames': solicitacoesExames.map((i) => i.toJson()).toList(),
+    };
+  }
+
   factory PatientRecord.fromJson(Map<String, dynamic> json) {
     return PatientRecord(
       medicalRecordNumber: json['medicalRecordNumber'] ?? '',

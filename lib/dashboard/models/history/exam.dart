@@ -12,6 +12,14 @@ class Exam {
     this.codigoAtendimento,
   });
 
+  Map<String, dynamic> toJson() {
+    return {
+      'exame': exame,
+      'medicalRecordNumber': medicalRecordNumber,
+      'codigoAtendimento': codigoAtendimento,
+    };
+  }
+
   factory Exam.fromJson(Map<String, dynamic> json) {
     return Exam(
       exame: json['exame'] ?? '',

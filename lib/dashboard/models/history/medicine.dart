@@ -17,6 +17,18 @@ class Medicamento {
     this.dataAtendimento,
   });
 
+  Map<String, dynamic> toJson() {
+    return {
+      'medicamento': medicamento,
+      'quantidade': quantidade,
+      'posologia': posologia,
+      'medicalRecordNumber': medicalRecordNumber,
+      'codigoAtendimento': codigoAtendimento,
+      'dataAtendimento': dataAtendimento,
+    };
+  }
+
+
   factory Medicamento.fromJson(Map<String, dynamic> json) {
     return Medicamento(
       medicamento: json['medicamento'] ?? '',

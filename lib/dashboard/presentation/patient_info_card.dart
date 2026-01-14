@@ -5,12 +5,14 @@ class PatientInfoCard extends StatelessWidget {
   final AnimationController pulseController;
   final DashboardRepository repository;
   final String? patientName;
+  final bool isOffline;
 
   const PatientInfoCard({
     super.key,
     required this.pulseController,
     required this.repository,
     this.patientName,
+    this.isOffline = false,
   });
 
   @override
@@ -108,6 +110,15 @@ class PatientInfoCard extends StatelessWidget {
                       color: Colors.white70,
                     ),
                   ),
+                  if (isOffline)
+                    Text(
+                      ' - Mostrando dados offline',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.orangeAccent[100],
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                 ],
               ),
             ),

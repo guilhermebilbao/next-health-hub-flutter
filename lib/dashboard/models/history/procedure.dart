@@ -11,6 +11,14 @@ class Procedimento {
     required this.procedimento,
   });
 
+  Map<String, dynamic> toJson() {
+    return {
+      'medicalRecordNumber': medicalRecordNumber,
+      'codigoAtendimento': codigoAtendimento,
+      'procedimento': procedimento,
+    };
+  }
+
   factory Procedimento.fromJson(Map<String, dynamic> json) {
     return Procedimento(
       medicalRecordNumber: json['medicalRecordNumber'] ?? '',

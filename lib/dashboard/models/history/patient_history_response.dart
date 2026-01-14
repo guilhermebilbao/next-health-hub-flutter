@@ -13,13 +13,22 @@ class PatientHistoryResponse {
     required this.data,
   });
 
+  Map<String, dynamic> toJson() {
+    return {
+      'statusCode': statusCode,
+      'message': message,
+      'data': data.map((item) => item.toJson()).toList(),
+    };
+  }
+
   factory PatientHistoryResponse.fromJson(Map<String, dynamic> json) {
     return PatientHistoryResponse(
-      statusCode: json['statusCode'],
-      message: json['message'],
-      data: (json['data'] as List)
-          .map((i) => PatientRecord.fromJson(i))
-          .toList(),
+      statusCode: json['statusCode'] ?? 0,
+      message: json['message'] ?? '',
+      data: (json['data'] as List?)
+              ?.map((i) => PatientRecord.fromJson(i))
+              .toList() ??
+          [],
     );
   }
 }
