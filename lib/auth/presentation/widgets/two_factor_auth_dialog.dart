@@ -1,13 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../data/auth_service.dart';
+
 class TwoFactorAuthDialog extends StatefulWidget {
   final Function(String) onVerified;
   final VoidCallback? onCancel;
+  final String emailMasked;
+  final String cpf;
 
   const TwoFactorAuthDialog({
     super.key,
     required this.onVerified,
+    required this.emailMasked,
+    required this.cpf,
     this.onCancel,
   });
 
@@ -18,6 +24,8 @@ class TwoFactorAuthDialog extends StatefulWidget {
 class _TwoFactorAuthDialogState extends State<TwoFactorAuthDialog> {
   final TextEditingController _controller = TextEditingController();
   final FocusNode _focusNode = FocusNode();
+  final AuthService _authService = AuthService(); // <--- 3. Instancie o serviço
+  bool _isLoading = false; // Para feedback visual ao usuário
   static const int _codeLength = 6;
   static const Color _themeColor = Color.fromRGBO(27, 106, 123, 1);
 
@@ -34,6 +42,80 @@ class _TwoFactorAuthDialogState extends State<TwoFactorAuthDialog> {
     _controller.dispose();
     _focusNode.dispose();
     super.dispose();
+  }
+
+  Future<void> _handleResendCode() async {
+    setState(() => _isLoading = true);
+    try {
+      await _authService.loginPatient(widget.cpf);
+
+      if (!mounted) return;
+
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.mark_email_read_outlined,
+                size: 64,
+                color: _themeColor,
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Código Enviado!',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: _themeColor,
+                ),
+              ),
+              const SizedBox(height: 12),
+              RichText(
+                textAlign: TextAlign.center,
+                text: TextSpan(
+                  style: const TextStyle(color: Colors.grey, fontSize: 14, height: 1.5),
+                  children: [
+                    const TextSpan(text: 'Um novo código de acesso foi enviado para o e-mail:\n'),
+                    TextSpan(
+                      text: widget.emailMasked,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            Center(
+              child: TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text(
+                  'OK',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: _themeColor,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao reenviar código: ${e.toString()}')),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -53,10 +135,10 @@ class _TwoFactorAuthDialogState extends State<TwoFactorAuthDialog> {
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text(
-            'Digite o código enviado para seu email g**********ao@g****.com',
+          Text(
+            'Digite o código enviado para seu email  ${widget.emailMasked}',
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.grey, fontSize: 14),
+            style: const TextStyle(color: Colors.grey, fontSize: 14),
           ),
           const SizedBox(height: 24),
           Stack(
@@ -129,32 +211,14 @@ class _TwoFactorAuthDialogState extends State<TwoFactorAuthDialog> {
       actions: [
         TextButton(
           onPressed: widget.onCancel ?? () => Navigator.of(context).pop(),
-          child: const Text(
-            'Cancelar',
-            style: TextStyle(color: Colors.red),
-          ),
+          child: const Text('Cancelar', style: TextStyle(color: Colors.red)),
         ),
         TextButton(
-          onPressed: () {
-            showDialog(
-              context: context,
-              builder: (context) {
-                return AlertDialog(
-                  content: const Text('Novo código enviado ao seu email cadastrado'),
-                  actions: [
-                    TextButton(
-                      onPressed: () {
-                        //TODO acionar o API de reenvio de codigo pra email
-                        Navigator.of(context).pop();
-                      },
-                      child: const Text('OK'),
-                    ),
-                  ],
-                );
-              },
-            );
-          },
-          child: const Text(
+          onPressed: _isLoading ? null : _handleResendCode,
+          child: _isLoading
+              ? const SizedBox(width: 20, height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2))
+              : const Text(
             'Gerar novo código',
             style: TextStyle(color: Colors.blue),
           ),

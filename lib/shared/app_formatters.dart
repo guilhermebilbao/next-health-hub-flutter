@@ -1,6 +1,5 @@
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 
-import '../dashboard/models/history/patient_record.dart';
 class MedicalEvolution {
   final String content;
   final String date;

@@ -45,14 +45,15 @@ class _LoginPatientViewState extends State<LoginPatientView> {
     }
   }
 
-  void _showTwoFactorDialog() {
+  void _showTwoFactorDialog(String emailMasked) {
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) => TwoFactorAuthDialog(
+        emailMasked: emailMasked,
+        cpf: _cpfController.text,
         onVerified: (code) {
           Navigator.of(dialogContext).pop();
-          // Agora passamos o CPF e o Código
           context.read<LoginBloc>().add(
             LoginCodeSubmitted(
               cpf: _cpfController.text,
@@ -76,7 +77,7 @@ class _LoginPatientViewState extends State<LoginPatientView> {
       body: BlocListener<LoginBloc, LoginState>(
         listener: (context, state) {
           if (state is LoginSuccess) {
-            _showTwoFactorDialog();
+            _showTwoFactorDialog(state.emailMasked);
           } else if (state is LoginVerified) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
@@ -92,9 +93,6 @@ class _LoginPatientViewState extends State<LoginPatientView> {
                 backgroundColor: Colors.red,
               ),
             );
-            if (state.message == 'Código incorreto. Tente novamente.') {
-              _showTwoFactorDialog();
-            }
           }
         },
         child: Center(

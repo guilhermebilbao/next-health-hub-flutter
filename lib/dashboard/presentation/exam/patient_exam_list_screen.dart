@@ -10,8 +10,6 @@ import 'package:path_provider/path_provider.dart';
 
 import '../../../components/app_bar.dart';
 import '../../../components/app_drawer.dart';
-import '../../../auth/data/auth_service.dart';
-import '../../../app_routes.dart';
 import '../../models/exam/patient_exam.dart';
 import '../../models/exam/exam_attachment_file_response.dart';
 import '../../data/patient_exam_attachment_service.dart';

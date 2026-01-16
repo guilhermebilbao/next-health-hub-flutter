@@ -4,8 +4,6 @@ import 'package:next_health_hub/shared/app_utils.dart';
 import 'package:provider/provider.dart';
 import '../../../components/app_bar.dart';
 import '../../../components/app_drawer.dart';
-import '../../../auth/data/auth_service.dart';
-import '../../../app_routes.dart';
 import '../../models/history/patient_history_models.dart';
 import 'patient_history_detail_screen.dart';
 import '../exam/patient_exam_list_screen.dart';

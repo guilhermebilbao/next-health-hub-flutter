@@ -104,7 +104,7 @@ class DashboardViewModel extends ChangeNotifier {
       int completedTasks = 0;
       const int totalTasks = 4;
 
-      Future<T> _logTask<T>(String name, Future<T> task) async {
+      Future<T> logTask<T>(String name, Future<T> task) async {
         debugPrint("DashboardViewModel: Iniciando tarefa: $name");
         try {
           final result = await task.timeout(const Duration(seconds: 30));
@@ -120,10 +120,10 @@ class DashboardViewModel extends ChangeNotifier {
       }
 
       final results = await Future.wait([
-        _logTask("getPatientName", _repository.getPatientName()),
-        _logTask("getPatientCns", _repository.getPatientCns()),
-        _logTask("getPatientExams", _examService.getPatientExams(id)),
-        _logTask(
+        logTask("getPatientName", _repository.getPatientName()),
+        logTask("getPatientCns", _repository.getPatientCns()),
+        logTask("getPatientExams", _examService.getPatientExams(id)),
+        logTask(
           "getPatientRecordHistory",
           _historyService.getPatientRecordHistory(id),
         ),
@@ -206,10 +206,12 @@ class DashboardViewModel extends ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
 
-      if (patientName != null)
+      if (patientName != null) {
         await prefs.setString(_keyPatientName, patientName!);
-      if (patientCns != null)
+      }
+      if (patientCns != null) {
         await prefs.setString(_keyPatientCns, patientCns!);
+      }
 
       if (examResponse != null) {
         await prefs.setString(_keyExamData, jsonEncode(examResponse!.toJson()));

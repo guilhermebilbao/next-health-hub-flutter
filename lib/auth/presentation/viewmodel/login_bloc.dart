@@ -21,8 +21,8 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
   ) async {
     emit(LoginLoading());
     try {
-      await _authService.loginPatient(event.cpf);
-      emit(LoginSuccess());
+      final response = await _authService.loginPatient(event.cpf);
+      emit(LoginSuccess(response.emailMasked ?? ''));
     } catch (e) {
       final message = e.toString().replaceAll('Exception: ', '');
       emit(LoginFailure(message));
@@ -39,7 +39,7 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
       if (isValid) {
         emit(LoginVerified());
       } else {
-        emit(LoginFailure('Código incorreto ou expirado. Tente novamente.'));
+        emit(LoginFailure('Código incorreto ou expirado.'));
       }
     } catch (e) {
       final message = e.toString().replaceAll('Exception: ', '');
