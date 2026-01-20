@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:barcode_widget/barcode_widget.dart';
 
+import '../../../shared/app_formatters.dart';
+
 class PatientSusCard extends StatelessWidget {
   final String nomeCompleto;
   final String numeroCartao;
+  final String dataNascimento;
+
 
   // Cores usadas na contrucao
   final Color emerald700 = const Color(0xFF047857);
@@ -18,10 +22,12 @@ class PatientSusCard extends StatelessWidget {
     super.key,
     required this.nomeCompleto,
     required this.numeroCartao,
+    required this.dataNascimento,
   });
 
   @override
   Widget build(BuildContext context) {
+
     return Container(
       width: 320,
       height: 500,
@@ -195,6 +201,9 @@ class PatientSusCard extends StatelessWidget {
 
   // Parte inferior -  Dados e Barcode
   Widget _buildBottomSection() {
+
+    String dataNascimentoFormatada = AppFormatters.formateBirthDate(dataNascimento);
+
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -249,9 +258,9 @@ class PatientSusCard extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             _buildLabel('Data Nasc.:'),
-                            const Text(
-                              '--/--/----',
-                              style: TextStyle(
+                            Text(
+                              dataNascimentoFormatada,
+                              style: const TextStyle(
                                 color: Colors.black54,
                                 fontSize: 13,
                               ),

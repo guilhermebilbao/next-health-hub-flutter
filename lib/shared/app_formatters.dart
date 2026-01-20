@@ -40,6 +40,18 @@ class AppFormatters {
     }
   }
 
+  static String formateBirthDate(String dateString) {
+    try {
+      final date = DateTime.parse(dateString);
+      final day = date.day.toString().padLeft(2, '0');
+      final month = date.month.toString().padLeft(2, '0');
+
+      return "$day/$month/${date.year}";
+    } catch (_) {
+      return dateString;
+    }
+  }
+
   static List<MedicalEvolution> parseAnamnese(String text) {
     if (text.isEmpty) return [];
     

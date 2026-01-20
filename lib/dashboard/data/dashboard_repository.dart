@@ -16,6 +16,11 @@ class DashboardRepository {
     return prefs.getString('patientCns');
   }
 
+  Future<String?> getPatientBirthDate() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('patientBirthDate');
+  }
+
   String getGreeting() {
     final hour = DateTime.now().hour;
     if (hour < 12) return "Bom dia";

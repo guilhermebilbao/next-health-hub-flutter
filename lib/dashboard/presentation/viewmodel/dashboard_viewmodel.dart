@@ -23,10 +23,12 @@ class DashboardViewModel extends ChangeNotifier {
   static const _keyHistoryData = 'cached_history';
   static const _keyPatientName = 'cached_patient_name';
   static const _keyPatientCns = 'cached_patient_cns';
+  static const _keyPatientBirthDate = 'cached_birth_date';
 
   // Estados
   String? patientName;
   String? patientCns;
+  String? patientBirthDate;
   PatientExamResponse? examResponse;
   PatientHistoryResponse? historyResponse;
   bool isLoading = false;
@@ -102,7 +104,7 @@ class DashboardViewModel extends ChangeNotifier {
       notifyListeners();
 
       int completedTasks = 0;
-      const int totalTasks = 4;
+      const int totalTasks = 5;
 
       Future<T> logTask<T>(String name, Future<T> task) async {
         debugPrint("DashboardViewModel: Iniciando tarefa: $name");
@@ -122,6 +124,7 @@ class DashboardViewModel extends ChangeNotifier {
       final results = await Future.wait([
         logTask("getPatientName", _repository.getPatientName()),
         logTask("getPatientCns", _repository.getPatientCns()),
+        logTask("getPatientBirthDate", _repository.getPatientBirthDate()),
         logTask("getPatientExams", _examService.getPatientExams(id)),
         logTask(
           "getPatientRecordHistory",
@@ -131,8 +134,9 @@ class DashboardViewModel extends ChangeNotifier {
 
       patientName = results[0] as String;
       patientCns = results[1] as String?;
-      examResponse = results[2] as PatientExamResponse;
-      historyResponse = results[3] as PatientHistoryResponse;
+      patientBirthDate = results[2] as String?;
+      examResponse = results[3] as PatientExamResponse;
+      historyResponse = results[4] as PatientHistoryResponse;
 
       isOffline = false;
 
@@ -171,11 +175,13 @@ class DashboardViewModel extends ChangeNotifier {
 
       final cachedName = prefs.getString(_keyPatientName);
       final cachedCns = prefs.getString(_keyPatientCns);
+      final cachedBirthDate = prefs.getString(_keyPatientBirthDate);
       final cachedExamsJson = prefs.getString(_keyExamData);
       final cachedHistoryJson = prefs.getString(_keyHistoryData);
 
       if (cachedName != null) patientName = cachedName;
       if (cachedCns != null) patientCns = cachedCns;
+      if (cachedBirthDate != null) patientBirthDate = cachedBirthDate;
 
       if (cachedExamsJson != null) {
         examResponse = PatientExamResponse.fromJson(
@@ -212,6 +218,9 @@ class DashboardViewModel extends ChangeNotifier {
       if (patientCns != null) {
         await prefs.setString(_keyPatientCns, patientCns!);
       }
+      if (patientBirthDate != null) {
+        await prefs.setString(_keyPatientBirthDate, patientBirthDate!);
+      }
 
       if (examResponse != null) {
         await prefs.setString(_keyExamData, jsonEncode(examResponse!.toJson()));
@@ -237,6 +246,7 @@ class DashboardViewModel extends ChangeNotifier {
     await prefs.remove(_keyHistoryData);
     await prefs.remove(_keyPatientName);
     await prefs.remove(_keyPatientCns);
+    await prefs.remove(_keyPatientBirthDate);
     clearData();
     debugPrint("DashboardViewModel: Cache limpo.");
   }
@@ -265,6 +275,7 @@ class DashboardViewModel extends ChangeNotifier {
   void clearData() {
     patientName = null;
     patientCns = null;
+    patientBirthDate = null;
     examResponse = null;
     historyResponse = null;
     errorMessage = null;
